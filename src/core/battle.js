@@ -169,6 +169,14 @@ const ULT_SKILLS = {
   king: { name: '王之守护', desc: '全体友军获得减伤' },
 };
 
+/**
+ * 只有这两种大招是「伤害型」的 —— 它们的倍率会乘到伤害上。
+ *
+ * 其余四种大招是功能性效果（治疗 / 穿透 / 护盾 / 减伤），
+ * 如果也乘伤害倍率，一次大招就能把同级单位秒掉 —— 那是数值失衡，不是爽感。
+ */
+const ULT_DAMAGE_CODES = new Set(['knight', 'queen']);
+
 /* -------------------------- 主流程 -------------------------- */
 
 /**
@@ -403,7 +411,8 @@ function performAttack(log, ctx, attacker, target, opponents, ultReady) {
     log.advance(T_SKILL);
     log.push('skill', {
       side: attacker.side, id: attacker.id, name: skill.name, desc: skill.desc,
-      mult: attacker.ultMult,
+      mult: Number(attacker.ultMult.toFixed(2)),
+      damages: ULT_DAMAGE_CODES.has(attacker.code),
     });
     attacker.ultCooldown = Math.max(1, attacker.ultCd);
   }
@@ -411,6 +420,8 @@ function performAttack(log, ctx, attacker, target, opponents, ultReady) {
   // 大招效果预处理
   let defenseIgnoreRatio = 0;
   let aoe = false;
+  // 只有伤害型大招才乘伤害倍率（其余四种是功能性大招）
+  const isDamageUlt = useUlt && ULT_DAMAGE_CODES.has(attacker.code);
   if (useUlt) {
     switch (attacker.code) {
       case 'pawn': {
@@ -419,7 +430,7 @@ function performAttack(log, ctx, attacker, target, opponents, ultReady) {
         for (const a of mine) {
           if (!a.isAlive) continue;
           const healed = healPiece(a, (attacker.recovery || 40) * 2);
-          a.shield += Math.floor(a.maxHp * 0.10);
+          a.shield = Math.min(Math.floor(a.maxHp * 0.25), a.shield + Math.floor(a.maxHp * 0.08));
           log.push('heal', { side: a.side, id: a.id, amount: Math.round(healed), hpAfter: Math.round(a.hp), fromSkill: true });
         }
         break;
@@ -428,7 +439,7 @@ function performAttack(log, ctx, attacker, target, opponents, ultReady) {
         defenseIgnoreRatio = 0.5;
         break;
       case 'rook':
-        attacker.shield += Math.floor(attacker.maxHp * 0.25);
+        attacker.shield += Math.floor(attacker.maxHp * 0.12);
         attacker.reflectRatio = 0.30;
         attacker.tauntRounds = 2;
         break;
@@ -454,7 +465,7 @@ function performAttack(log, ctx, attacker, target, opponents, ultReady) {
       attacker,
       defender: t,
       rng,
-      ult: useUlt,
+      ult: isDamageUlt,
       defenseIgnoreRatio,
     });
 
@@ -490,7 +501,7 @@ function performAttack(log, ctx, attacker, target, opponents, ultReady) {
 
     log.advance(T_HIT);
     log.push('attack', {
-      side: attacker.side, id: attacker.id, target: t.id, targetName: t.name,
+      side: attacker.side, id: attacker.id, name: attacker.name, target: t.id, targetName: t.name,
       damage: finalDamage,
       crit: res.crit,
       combo: res.combo,
@@ -498,7 +509,7 @@ function performAttack(log, ctx, attacker, target, opponents, ultReady) {
       shieldAbsorbed: res.shieldAbsorbed,
       brokeDefense: res.brokeDefense,
       execute: res.execute,
-      ult: useUlt,
+      ult: isDamageUlt,
       hpBefore: Math.round(res.hpBefore),
       hpAfter: Math.round(t.hp),
       maxHp: t.maxHp,
@@ -526,7 +537,7 @@ function performAttack(log, ctx, attacker, target, opponents, ultReady) {
     if (second) {
       const res = resolveAttack({ attacker, defender: second, rng, ult: false });
       log.push('attack', {
-        side: attacker.side, id: attacker.id, target: second.id, targetName: second.name,
+        side: attacker.side, id: attacker.id, name: attacker.name, target: second.id, targetName: second.name,
         damage: res.damage, crit: res.crit, combo: res.combo, rawDamage: Math.round(res.rawDamage),
         shieldAbsorbed: res.shieldAbsorbed, brokeDefense: res.brokeDefense, execute: res.execute,
         ult: false, secondStrike: true, hpBefore: Math.round(res.hpBefore), hpAfter: Math.round(second.hp),
@@ -606,42 +617,22 @@ function evaluateEnd(ctx) {
  */
 export function generateEnemyRoster(chapter, playerRound, rng) {
   const cfg = chapterConfig(chapter, playerRound);
-  const templates = ['pawn', 'knight', 'bishop', 'rook', 'queen', 'king'];
-  const pool = templates.map((code) => TEMPLATE_BY_CODE[code]);
-  // 章节越高，王越容易出现
-  const weights = pool.map((t) => {
-    let w = t.code === 'king' ? 6 + chapter * 6 : t.code === 'queen' ? 12 + chapter * 2 : t.shopWeight;
-    return { ...t, weight: w };
-  });
 
-  const chosen = [];
-  for (let i = 0; i < cfg.count; i++) {
-    const t = rng.pick(weights);
-    chosen.push(t);
-  }
-  // 保证敌方有一个王（否则「将死」永远触发不了）
-  if (!chosen.some((t) => t.code === 'king')) {
-    chosen[chosen.length - 1] = TEMPLATE_BY_CODE.king;
-  }
-
-  const roster = chosen.map((t, i) => {
+  const roster = cfg.lineup.map((code, i) => {
+    const t = TEMPLATE_BY_CODE[code];
     const piece = createPiece(t, { level: cfg.level, star: cfg.star });
     piece.attack = Math.floor(piece.attack * cfg.atkScale);
     piece.maxHp = Math.floor(piece.maxHp * cfg.hpScale);
     piece.hp = piece.maxHp;
-    piece.critRate = Math.min(0.85, piece.critRate + cfg.chapter * 0.01);
-    piece.critMult = Math.min(10, piece.critMult + Math.floor(cfg.chapter / 2) * 0.5);
-    piece.ultMult = Math.min(10, piece.ultMult + Math.floor(cfg.chapter / 2) * 0.5);
+    piece.critRate = Math.min(0.85, piece.critRate);
+    piece.critMult = Math.min(10, piece.critMult + Math.floor(cfg.chapter / 3) * 0.4);
+    piece.ultMult = Math.min(10, piece.ultMult + Math.floor(cfg.chapter / 3) * 0.4);
     piece.side = SIDE_ENEMY;
     piece.id = 900000 + i;
     piece.name = `${t.name}·敌方`;
     piece.glyph = t.glyph;
     // 敌方装备
-    const gearPool = ['crit_claw', 'blood_fury', 'ward_gen', 'swift', 'armor_break', 'frost_core'];
-    piece.items = [];
-    for (let g = 0; g < cfg.gear && g < 3; g++) {
-      piece.items.push(gearPool[rng.int(0, gearPool.length - 1)]);
-    }
+    piece.items = [...cfg.gear];
     // 布阵在敌方半场（散开一点，不要挤成一排）
     piece.file = (i * 3) % 8;
     piece.rank = Math.min(7, 4 + Math.floor(i / 3));

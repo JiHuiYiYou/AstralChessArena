@@ -49,8 +49,8 @@ export const PIECE_TEMPLATES = [
   {
     id: 1, code: 'pawn', name: '兵', glyph: '♟', movement: '前进 1 格（首动可 2 格），斜前方 1 格吃子；抵达底线升变。',
     profession: 'healer',
-    baseAttack: 60, baseHp: 850, baseSpeed: 3,
-    baseCritRate: 0.05, baseCritMult: 1.5, baseDodge: 0.02, baseDefense: 0.05,
+    baseAttack: 75, baseHp: 1000, baseSpeed: 3,
+    baseCritRate: 0.05, baseCritMult: 1.4, baseDodge: 0.02, baseDefense: 0.05,
     baseUltMult: 1.5, baseUltCd: 3, baseRecovery: 40,
     skillName: '战地鼓舞', skillDesc: '治疗全体友军并提供护盾。',
     shopWeight: 34, promoteTo: ['knight', 'bishop', 'rook'],
@@ -58,17 +58,17 @@ export const PIECE_TEMPLATES = [
   {
     id: 2, code: 'knight', name: '马', glyph: '♞', movement: '日字 8 格跳跃，受蹩马腿限制。',
     profession: 'assassin',
-    baseAttack: 120, baseHp: 780, baseSpeed: 8,
-    baseCritRate: 0.35, baseCritMult: 2.5, baseDodge: 0.12, baseDefense: 0.02,
-    baseUltMult: 2.0, baseUltCd: 3, baseRecovery: 0,
+    baseAttack: 120, baseHp: 1000, baseSpeed: 8,
+    baseCritRate: 0.35, baseCritMult: 2.2, baseDodge: 0.12, baseDefense: 0.02,
+    baseUltMult: 1.6, baseUltCd: 3, baseRecovery: 0,
     skillName: '影刃连斩', skillDesc: '连续斩击，本次行动额外发动一次攻击。',
     shopWeight: 28, promoteTo: null,
   },
   {
     id: 3, code: 'bishop', name: '主教', glyph: '♝', movement: '沿斜线任意格移动，路径不可穿越。',
     profession: 'mage',
-    baseAttack: 110, baseHp: 680, baseSpeed: 5,
-    baseCritRate: 0.20, baseCritMult: 2.2, baseDodge: 0.05, baseDefense: 0.02,
+    baseAttack: 110, baseHp: 900, baseSpeed: 5,
+    baseCritRate: 0.20, baseCritMult: 2.0, baseDodge: 0.05, baseDefense: 0.02,
     baseUltMult: 2.2, baseUltCd: 3, baseRecovery: 0,
     skillName: '奥术穿透', skillDesc: '无视目标一半防御力。',
     shopWeight: 22, promoteTo: null,
@@ -76,8 +76,8 @@ export const PIECE_TEMPLATES = [
   {
     id: 4, code: 'rook', name: '车', glyph: '♜', movement: '沿横竖直线任意格移动，路径不可穿越。',
     profession: 'guard',
-    baseAttack: 90, baseHp: 1150, baseSpeed: 3,
-    baseCritRate: 0.10, baseCritMult: 1.8, baseDodge: 0.02, baseDefense: 0.25,
+    baseAttack: 115, baseHp: 1300, baseSpeed: 3,
+    baseCritRate: 0.10, baseCritMult: 1.6, baseDodge: 0.02, baseDefense: 0.25,
     baseUltMult: 1.6, baseUltCd: 4, baseRecovery: 0,
     skillName: '铁壁反击', skillDesc: '受到攻击时反弹伤害并获得护盾。',
     shopWeight: 20, promoteTo: null,
@@ -85,17 +85,17 @@ export const PIECE_TEMPLATES = [
   {
     id: 5, code: 'queen', name: '后', glyph: '♛', movement: '沿横竖或斜线任意格移动，路径不可穿越。',
     profession: 'mage',
-    baseAttack: 150, baseHp: 900, baseSpeed: 6,
-    baseCritRate: 0.25, baseCritMult: 2.8, baseDodge: 0.08, baseDefense: 0.05,
-    baseUltMult: 3.0, baseUltCd: 4, baseRecovery: 0,
+    baseAttack: 150, baseHp: 1100, baseSpeed: 6,
+    baseCritRate: 0.25, baseCritMult: 2.4, baseDodge: 0.08, baseDefense: 0.05,
+    baseUltMult: 1.8, baseUltCd: 4, baseRecovery: 0,
     skillName: '群星陨落', skillDesc: '对全体敌人造成大招倍率伤害。',
     shopWeight: 12, promoteTo: null,
   },
   {
     id: 6, code: 'king', name: '王', glyph: '♚', movement: '向周围 8 个方向移动 1 格。',
     profession: 'guard',
-    baseAttack: 70, baseHp: 1400, baseSpeed: 2,
-    baseCritRate: 0.10, baseCritMult: 2.0, baseDodge: 0.02, baseDefense: 0.20,
+    baseAttack: 85, baseHp: 1400, baseSpeed: 2,
+    baseCritRate: 0.10, baseCritMult: 1.8, baseDodge: 0.02, baseDefense: 0.20,
     baseUltMult: 1.5, baseUltCd: 4, baseRecovery: 0,
     skillName: '王之守护', skillDesc: '为全体友军提供减伤，光环随羁绊增强。',
     shopWeight: 8, promoteTo: null,
@@ -110,6 +110,20 @@ export const TEMPLATE_BY_CODE = Object.fromEntries(PIECE_TEMPLATES.map((t) => [t
 
 /** 每升 1 级，等级系数 ×1.35（对应「每级 +35% 上限」） */
 export const LEVEL_SCALE_STEP = 1.35;
+
+/**
+ * 「软成长」系数：暴击率 / 暴击倍率 / 防御 / 闪避这类**百分比属性**用的。
+ *
+ * 它们**不能**跟着等级系数（1.35^L）一起涨 —— 那样 5 级的暴击倍率会到 7 倍，
+ * 一击暴击直接秒掉同级单位，战斗就变成掷骰子（实测：第 5 章 1 回合结束）。
+ * 百分比属性要靠突破 / 装备 / 卡牌来长大，升级只给很小的加成。
+ */
+/** 暴击类属性的软成长系数 —— 很小 */
+export const CRIT_SCALE_STEP = 0.035;
+/** 防御 / 闪避的软成长系数 */
+export const DEF_SCALE_STEP = 0.08;
+/** 其它软属性（回复等）的软成长系数 */
+export const SOFT_SCALE_STEP = 0.12;
 
 /** 1 级时属性上限相对模板基础值的倍数 */
 export const CAP_MULTIPLIER = 4;
@@ -138,6 +152,21 @@ export function levelScale(level) {
   return Math.pow(LEVEL_SCALE_STEP, Math.max(0, level - 1));
 }
 
+/** 软成长系数（百分比属性用） */
+export function softScale(level) {
+  return 1 + SOFT_SCALE_STEP * Math.max(0, level - 1);
+}
+
+/** 暴击类属性的软成长系数 —— 刻意压得很小 */
+export function critScale(level) {
+  return 1 + CRIT_SCALE_STEP * Math.max(0, level - 1);
+}
+
+/** 防御 / 闪避的软成长系数 */
+export function defScale(level) {
+  return 1 + DEF_SCALE_STEP * Math.max(0, level - 1);
+}
+
 /**
  * 某等级下某棋子的属性上限。
  * @param {object} template 棋子模板
@@ -146,21 +175,24 @@ export function levelScale(level) {
  */
 export function statCaps(template, level, breakthroughBonus = {}) {
   const s = levelScale(level);
+  const soft = softScale(level);
+  const crit = critScale(level);
+  const def = defScale(level);
   const bonus = (key) => breakthroughBonus[key] ?? 1;
-  const cap = (base, key, hardCap) => {
-    const v = base * s * CAP_MULTIPLIER * bonus(key);
+  const cap = (base, key, hardCap, scale = s) => {
+    const v = base * scale * CAP_MULTIPLIER * bonus(key);
     return hardCap === undefined ? Math.floor(v) : Math.min(hardCap, v);
   };
   return {
     attack: cap(template.baseAttack, 'attack'),
     hp: cap(template.baseHp, 'hp'),
-    critRate: cap(template.baseCritRate, 'critRate', STAT_HARD_CAPS.critRate),
-    critMult: cap(template.baseCritMult, 'critMult', STAT_HARD_CAPS.critMult),
-    ultMult: cap(template.baseUltMult, 'ultMult', STAT_HARD_CAPS.ultMult),
-    defense: cap(template.baseDefense, 'defense', STAT_HARD_CAPS.defense),
-    dodge: cap(template.baseDodge, 'dodge', STAT_HARD_CAPS.dodge),
+    critRate: cap(template.baseCritRate, 'critRate', STAT_HARD_CAPS.critRate, crit),
+    critMult: cap(template.baseCritMult, 'critMult', STAT_HARD_CAPS.critMult, crit),
+    ultMult: cap(template.baseUltMult, 'ultMult', STAT_HARD_CAPS.ultMult, crit),
+    defense: cap(template.baseDefense, 'defense', STAT_HARD_CAPS.defense, def),
+    dodge: cap(template.baseDodge, 'dodge', STAT_HARD_CAPS.dodge, def),
     finalDamageMult: cap(1, 'finalDamageMult', STAT_HARD_CAPS.finalDamageMult),
-    recovery: cap(template.baseRecovery, 'recovery'),
+    recovery: cap(template.baseRecovery, 'recovery', undefined, soft),
     speed: STAT_HARD_CAPS.speed,
   };
 }
@@ -253,17 +285,49 @@ export const CHAPTERS = 12;
 /** 每方最多上阵的棋子数 */
 export const MAX_BOARD_PIECES = 5;
 
+/**
+ * 敌方阵容（按章节固定）。
+ *
+ * 之前是每章随机抽 —— 结果难度曲线剧烈抖动（抽到「后+王」和抽到「兵+马」
+ * 强度差接近一倍）。固定 lineup 之后难度才可控、可调。
+ * 数量始终 ≤ 玩家在该章节应有的棋子数。
+ */
+export const ENEMY_LINEUPS = [
+  ['pawn', 'pawn'],
+  ['pawn', 'knight'],
+  ['knight', 'rook', 'pawn'],
+  ['knight', 'rook', 'bishop', 'pawn'],
+  ['king', 'knight', 'rook', 'bishop'],
+  ['king', 'knight', 'rook', 'bishop', 'pawn'],
+  ['queen', 'king', 'knight', 'rook', 'bishop'],
+  ['queen', 'king', 'queen', 'knight', 'rook'],
+];
+
+/** 各章节敌方固定装备（随机装备会让难度曲线抖动） */
+export const ENEMY_GEAR = [
+  [],
+  [],
+  [],
+  ['crit_claw'],
+  ['swift', 'crit_claw'],
+  ['crit_claw', 'ward_gen'],
+  ['crit_claw', 'armor_break'],
+  ['crit_claw', 'armor_break', 'blood_fury'],
+];
+
 /** 第 N 章的敌方阵容配置 */
 export function chapterConfig(chapter, playerRound) {
   const n = Math.max(1, Math.floor(chapter));
+  const lineup = ENEMY_LINEUPS[Math.min(ENEMY_LINEUPS.length, n) - 1];
   return {
     chapter: n,
-    count: Math.min(MAX_BOARD_PIECES, 2 + Math.floor(n / 2)),
-    level: Math.max(1, 1 + Math.floor(n * 0.9) + Math.floor(playerRound * 0.25)),
+    count: lineup.length,
+    lineup,
+    level: n,
     star: Math.min(5, 1 + Math.floor(n / 3)),
-    gear: Math.min(3, Math.floor(n / 2)),
-    hpScale: 1 + 0.18 * (n - 1),
-    atkScale: 1 + 0.22 * (n - 1),
+    gear: (ENEMY_GEAR[Math.min(ENEMY_GEAR.length, n) - 1] ?? []),
+    hpScale: 1,
+    atkScale: 1,
     goldReward: ECONOMY.winBonusBase + ECONOMY.winBonusPerChapter * n,
   };
 }

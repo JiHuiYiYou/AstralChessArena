@@ -1097,3 +1097,7 @@ a {
 .side-panel > .tabs {
   flex: 0 0 auto;
 }
+
+.side-panel > #result-slot {
+  flex: 0 0 auto;
+}

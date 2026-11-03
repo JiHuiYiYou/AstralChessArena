@@ -16,7 +16,10 @@ import {
   TRAIN_MULTIPLIER,
   TRAIN_SOFT_MULTIPLIER,
   TRAINING,
+  critScale,
+  defScale,
   levelScale,
+  softScale,
   statCaps,
 } from './balance.js';
 import { applyCard } from './items.js';
@@ -33,8 +36,11 @@ import { applyCard } from './items.js';
 export function createPiece(template, opts = {}) {
   const level = Math.max(1, opts.level ?? 1);
   const s = levelScale(level);
+  const soft = softScale(level);
+  const crit = critScale(level);
+  const def = defScale(level);
   const caps = statCaps(template, level);
-  // 初始值 = 模板基础值 × 等级系数，**不是上限**。
+  // 初始值 = 模板基础值 × 对应系数，**不是上限**。
   // （一开始就把属性顶到上限的话，就永远没空间训练了 —— 这是个很容易踩的坑。）
   const hp = Math.min(caps.hp, Math.floor(template.baseHp * s));
   return {
@@ -52,14 +58,16 @@ export function createPiece(template, opts = {}) {
     hp,
     maxHp: hp,
     shield: 0,
+    shieldBreakBonus: 0,
     speed: Math.min(STAT_HARD_CAPS.speed, template.baseSpeed),
-    critRate: Math.min(caps.critRate, template.baseCritRate * s),
-    critMult: Math.min(caps.critMult, template.baseCritMult * s),
-    dodge: Math.min(caps.dodge, template.baseDodge * s),
-    defense: Math.min(caps.defense, template.baseDefense * s),
-    recovery: Math.min(caps.recovery, template.baseRecovery * s),
+    // 百分比属性走软成长系数，不跟着 1.35^L 涨
+    critRate: Math.min(caps.critRate, template.baseCritRate * crit),
+    critMult: Math.min(caps.critMult, template.baseCritMult * crit),
+    ultMult: Math.min(caps.ultMult, template.baseUltMult * crit),
+    dodge: Math.min(caps.dodge, template.baseDodge * def),
+    defense: Math.min(caps.defense, template.baseDefense * def),
+    recovery: Math.min(caps.recovery, template.baseRecovery * soft),
     finalDamageMult: 1,
-    ultMult: Math.min(caps.ultMult, template.baseUltMult * s),
     ultCd: Math.max(1, template.baseUltCd),
     items: [],
     attributes: {},

@@ -572,6 +572,7 @@ function showBattleStage(res) {
   $('btn-battle-back').classList.add('hidden');
   $('battle-title').textContent = `第 ${res.rounds ?? '?'} 回合 · 第 ${state.save.chapter} 章`;
   $('battle-log').innerHTML = '';
+  $('result-slot').innerHTML = '';
 
   resetBoard();
   state.battleCtrl.skip = false;
@@ -588,10 +589,40 @@ function showBattleStage(res) {
       $('btn-battle-back').classList.remove('hidden');
       const label = res.result === 'win' ? '胜利' : res.result === 'lose' ? '失败' : '平局';
       appendLog(`—— 战斗${label} —— 获得 ${formatNum(res.rewards.gold)} 金币`, 'result');
+      showResult(res);
       rewardPop($('battle-title'));
       await reload();
     },
   });
+}
+
+/** 战斗结果面板 */
+function showResult(res) {
+  const slot = $('result-slot');
+  if (!slot) return;
+  const win = res.result === 'win';
+  const rows = [
+    ['战斗回合', `${res.rounds} 回合`, ''],
+    ['我方战力', formatNum(res.allyPower), ''],
+    ['敌方战力', formatNum(res.enemyPower), ''],
+    ['获得金币', `+${formatNum(res.rewards.gold)}`, 'reward-gain'],
+  ];
+  if (win) {
+    rows.push(['章节进度', `第 ${res.chapter} 章`, 'reward-gain']);
+    rows.push(['连胜', `${res.state?.streakWin ?? 0} 连胜`, 'reward-gain']);
+  } else {
+    rows.push(['章节进度', `仍为第 ${res.state?.chapter ?? res.chapter} 章`, 'reward-lose']);
+  }
+
+  slot.innerHTML = `
+    <div class="result-panel" data-result="${res.result}">
+      <div class="result-title">${res.result === 'win' ? '胜 利' : res.result === 'lose' ? '失 败' : '平 局'}</div>
+      <div class="result-reward">
+        ${rows.map(([k, v, cls]) => `
+          <div class="reward-row"><span>${k}</span><span class="${cls}">${v}</span></div>`).join('')}
+      </div>
+    </div>
+  `;
 }
 
 function appendLog(text, type = '') {
@@ -607,6 +638,7 @@ function appendLog(text, type = '') {
 
 function backToPrep() {
   state.view = 'prep';
+  $('result-slot').innerHTML = '';
   $('stage-battle').classList.add('hidden');
   $('stage-prep').classList.remove('hidden');
   renderAll();

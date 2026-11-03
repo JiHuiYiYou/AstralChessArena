@@ -55,6 +55,8 @@ export function resolveAttack({ attacker, defender, rng, ult = false, defenseIgn
     ult: !!ult,
     lifesteal: 0,
     killHeal: 0,
+    shieldBroken: false,
+    shieldBonus: false,
     armorPierced: attacker.armorPierce ?? 0,
   };
 
@@ -128,13 +130,30 @@ export function resolveAttack({ attacker, defender, rng, ult = false, defenseIgn
     return finish(attacker, defender, result);
   }
 
-  // ---- 4. 护盾 ----
-  const shield = defender.shield ?? 0;
+  // ---- 4. 破盾加伤（上一击打碎的护盾，在这一击生效） ----
+  if (attacker.shieldBreakBonus > 0) {
+    hpDamage *= 1 + attacker.shieldBreakBonus;
+    attacker.shieldBreakBonus = 0;
+    result.shieldBonus = true;
+  }
+
+  // ---- 5. 护盾 ----
+  // 护盾上限 = 最大生命的 25%。
+  // 没有上限的话，「铁壁反击」每几回合加一大片护盾，
+  // 而每回合伤害又打不穿 —— 两个车会永远僵持（实测 40 回合 0 伤害）。
+  const shieldCap = Math.floor(defender.maxHp * 0.25);
+  const shield = Math.min(defender.shield ?? 0, shieldCap);
+  if (defender.shield !== undefined) defender.shield = shield;
   if (shield > 0) {
     const absorbed = Math.min(shield, hpDamage);
     defender.shield = shield - absorbed;
     result.shieldAbsorbed = absorbed;
     hpDamage -= absorbed;
+    if (defender.shield <= 0 && absorbed > 0) {
+      // 护盾被打碎：攻击方**下一次**打这个目标伤害 +30%
+      result.shieldBroken = true;
+      attacker.shieldBreakBonus = 0.3;
+    }
   }
 
   defender.hp = Math.max(0, defender.hp - hpDamage);

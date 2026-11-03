@@ -97,6 +97,7 @@ public/         浏览器前端（原生 ES module，无打包器）
   js/battle/sound.js   程序化 WebAudio 音效
 test/           node:test 单元测试
 tools/          平衡模拟、接口冒烟、Word 文档生成、截图
+docs/           分主题的规约小文档（AGENTS.md 是索引）
 legacy/         原版单文件 HTML 游戏（保留作对照）
 deliverables/   作业提交材料（Word 文档 + 截图）
 ```

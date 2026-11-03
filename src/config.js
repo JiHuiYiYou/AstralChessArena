@@ -26,4 +26,4 @@ export const MAX_PORT_TRIES = 20;
 export const SAVE_SLOTS = 3;
 
 /** 战斗最大回合数，超时判平局（不是判负 —— 原版 bug ⑨） */
-export const MAX_ROUNDS = 30;
+export const MAX_ROUNDS = 40;

@@ -313,6 +313,15 @@ ${appendix('SPEC.md')}
 ### 附录 C · TASK.md（任务清单）
 
 ${appendix('TASK.md')}
+### 附录 D · docs/balance.md（数值与平衡调参规约）
+
+${appendix('docs/balance.md')}
+### 附录 E · docs/frontend.md（前端渲染与动效规约）
+
+${appendix('docs/frontend.md')}
+### 附录 F · docs/pitfalls.md（踩过的坑）
+
+${appendix('docs/pitfalls.md')}
 `;
 }
 
