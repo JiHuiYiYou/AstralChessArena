@@ -11,7 +11,11 @@ import { escapeHtml } from './shop.js';
  * @param {object} handlers { onSelect, onTrain, onAscend, onBreakthrough, onEquip, onDeploy, onSell }
  */
 export function renderRoster(container, data, handlers = {}) {
-  const heroes = (data.heroes ?? []).filter((h) => h.isAlly && h.exist);
+  // 按战力降序 —— 最强的排在前面，玩家一眼就知道该带谁上场
+  // （自动通关模拟实测：把一堆 1 级棋子全塞上场会被平均战力稀释，打到第 3 章就卡住）
+  const heroes = (data.heroes ?? [])
+    .filter((h) => h.isAlly && h.exist)
+    .sort((a, b) => (b.power ?? 0) - (a.power ?? 0));
   const items = data.items ?? [];
 
   container.innerHTML = `
@@ -68,7 +72,7 @@ function heroCard(h, data, handlers) {
   ].map(([k, v]) => `<div class="stat-row"><span class="stat-label">${k}</span><span class="stat-value">${v}</span></div>`).join('');
 
   return `
-    <div class="hero-card ${selected ? 'selected' : ''}" data-hero="${h.id}">
+    <div class="hero-card ${selected ? 'selected' : ''} ${onBoard ? '' : 'dimmed'}" data-hero="${h.id}">
       <div class="hero-card-head">
         <span class="hero-prof" style="color:${professionColor(data, h)}">${escapeHtml(professionName(data, h))}</span>
         <span class="hero-stars">${'★'.repeat(Math.max(1, Math.min(5, h.star ?? 1)))}</span>
