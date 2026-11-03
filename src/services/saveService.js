@@ -9,6 +9,7 @@ import { getDb, transaction } from '../db/index.js';
 import { randomSeed, Rng } from '../core/rng.js';
 import { rollShop } from '../core/economy.js';
 import { createPiece } from '../core/progression.js';
+import { powerOf } from '../core/combat.js';
 import { TEMPLATE_BY_CODE } from '../core/balance.js';
 import * as saveRepo from '../db/repo/saveRepo.js';
 
@@ -18,7 +19,8 @@ export function getState(slot) {
   if (!save) return null;
   return {
     save,
-    heroes: saveRepo.listHeroes(save.id),
+    // 战力在服务端算好 —— 前端只负责显示，不重复实现公式
+    heroes: saveRepo.listHeroes(save.id).map((h) => ({ ...h, power: powerOf(h) })),
     cards: saveRepo.listSaveCards(save.id),
     items: saveRepo.listItems(save.id),
     shop: saveRepo.listShopSlots(save.id),

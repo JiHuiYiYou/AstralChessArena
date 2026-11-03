@@ -171,16 +171,18 @@ export function defScale(level) {
  * 某等级下某棋子的属性上限。
  * @param {object} template 棋子模板
  * @param {number} level    等级（>=1）
- * @param {object} [breakthroughBonus] { statKey: 倍数 } —— 突破会把该属性的上限再抬高
+ * @param {object} [breakthroughBonus] { statKey: 绝对下限 } —— 突破会把该属性的下限抬到这里
  */
 export function statCaps(template, level, breakthroughBonus = {}) {
   const s = levelScale(level);
   const soft = softScale(level);
   const crit = critScale(level);
   const def = defScale(level);
-  const bonus = (key) => breakthroughBonus[key] ?? 1;
   const cap = (base, key, hardCap, scale = s) => {
-    const v = base * scale * CAP_MULTIPLIER * bonus(key);
+    // 突破给的是一个「绝对下限」，不是乘数 ——
+    // 乘数会让上限跟着突破次数指数膨胀（20 次突破就是 1.5^20 倍）。
+    const floor = breakthroughBonus[key] ?? 0;
+    const v = Math.max(base * scale * CAP_MULTIPLIER, floor);
     return hardCap === undefined ? Math.floor(v) : Math.min(hardCap, v);
   };
   return {
@@ -259,8 +261,10 @@ export const BREAKTHROUGH = {
   costPerLevel: 1.35,
   rateMin: 1.30,
   rateMax: 1.60,
-  /** 突破后该属性上限的抬升倍数 */
-  capBonus: 1.5,
+  /** 每个属性最多突破几次 —— 突破是有限资源，不是无限乘数 */
+  maxCount: 3,
+  /** 突破后该属性上限至少是当前值的这个倍数 */
+  capFloorRatio: 1.05,
 };
 
 /** 可被突破的属性 */
@@ -284,6 +288,12 @@ export const CHAPTERS = 12;
 
 /** 每方最多上阵的棋子数 */
 export const MAX_BOARD_PIECES = 5;
+
+/**
+ * 棋子库存上限（上阵的 + 没上阵的）。
+ * 没有上限的话商店可以一直买，存档会膨胀到几百个棋子（实测 45 回合买到 100+）。
+ */
+export const ROSTER_LIMIT = 24;
 
 /**
  * 敌方阵容（按章节固定）。

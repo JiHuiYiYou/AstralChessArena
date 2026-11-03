@@ -70,20 +70,32 @@ test('训练成本随等级与次数上涨', () => {
   assert.ok(c2 > c1);
 });
 
-test('升阶公式：取大 + 小的 50%，不是平均值（原版 bug ⑧）', () => {
+test('升阶公式：取大 + 小的 50%，再乘等级系数比 —— 总属性不缩水（原版 bug ⑧）', () => {
   const t = TEMPLATE_BY_CODE.knight;
   const a = createPiece(t, { level: 1 });
   const b = createPiece(t, { level: 1 });
-  // 取 1 级上限以内的值，避免被 statCaps 夹掉
-  a.attack = 400;
-  b.attack = 200;
-  a.maxHp = 4000;
-  b.maxHp = 2000;
+  // 取 1 级上限以内的值，避免被 statCaps 夹掉（1 级上限：攻击 480 / 生命 4000）
+  a.attack = 300;
+  b.attack = 150;
+  a.maxHp = 3000;
+  b.maxHp = 1500;
   const m = ascend(a, b, t);
-  assert.equal(m.attack, 400 + Math.floor(200 * 0.5));
-  assert.ok(m.attack > (400 + 200) / 2, '必须明显优于平均值');
+  const merge = 300 + Math.floor(150 * 0.5);
+  assert.equal(m.attack, Math.floor(merge * 1.35));
+  assert.ok(m.attack > (300 + 150) / 2, '必须明显优于平均值');
   assert.equal(m.level, 2);
   assert.equal(m.star, 2);
+});
+
+test('升阶后总属性不低于升阶前（少一个身位但更强）', () => {
+  const t = TEMPLATE_BY_CODE.knight;
+  const a = createPiece(t, { level: 3 });
+  const b = createPiece(t, { level: 3 });
+  const beforeAttack = a.attack + b.attack;
+  const beforeHp = a.maxHp + b.maxHp;
+  const m = ascend(a, b, t);
+  assert.ok(m.attack >= beforeAttack * 0.95, `升阶后 ${m.attack} 不该低于升阶前总和 ${beforeAttack}`);
+  assert.ok(m.maxHp >= beforeHp * 0.95, `升阶后生命 ${m.maxHp} 不该低于升阶前总和 ${beforeHp}`);
 });
 
 test('升阶保留强的那一边的其它属性', () => {
@@ -96,16 +108,39 @@ test('升阶保留强的那一边的其它属性', () => {
   assert.equal(m.critMult, 2.2);
 });
 
-test('突破：属性上涨，且上限同步抬高（不会白费）', () => {
+test('突破：属性上涨，且新值不会被上限夹回去', () => {
   const t = TEMPLATE_BY_CODE.knight;
   const p = createPiece(t, { level: 1 });
-  const capsBefore = statCaps(t, 1);
   const before = p.attack;
   const res = breakthrough(p, 'attack', new Rng(5), t);
   assert.equal(res.ok, true);
   assert.ok(p.attack > before);
+  // 突破抬的是「绝对下限」，所以新值必须还在上限之内
   const capsAfter = statCaps(t, 1, p.breakthroughBonus);
-  assert.ok(capsAfter.attack > capsBefore.attack, '突破后该属性的上限必须提高');
+  assert.ok(capsAfter.attack >= p.attack, `突破后的 ${p.attack} 不该被上限 ${capsAfter.attack} 夹掉`);
+  assert.equal(res.count, 1);
+});
+
+test('突破：同一属性最多 3 次（不能无限叠）', () => {
+  const t = TEMPLATE_BY_CODE.knight;
+  const p = createPiece(t, { level: 1 });
+  for (let i = 0; i < 3; i++) {
+    const r = breakthrough(p, 'attack', new Rng(i), t);
+    assert.equal(r.ok, true, `第 ${i + 1} 次突破应该成功`);
+  }
+  const fourth = breakthrough(p, 'attack', new Rng(9), t);
+  assert.equal(fourth.ok, false);
+  assert.ok(fourth.reason.includes('上限'));
+});
+
+test('改动属性后不会出现小数（生命/攻击必须是整数）', () => {
+  const t = TEMPLATE_BY_CODE.bishop;
+  const p = createPiece(t, { level: 1 });
+  applyCard(p, { stat: 'hp', operation: 'mul', value: 1.37 });
+  assert.equal(Number.isInteger(p.maxHp), true, `生命上限成了小数：${p.maxHp}`);
+  assert.equal(Number.isInteger(p.hp), true, `生命成了小数：${p.hp}`);
+  applyCard(p, { stat: 'attack', operation: 'mul', value: 1.11 });
+  assert.equal(Number.isInteger(p.attack), true, `攻击成了小数：${p.attack}`);
 });
 
 test('生命卡同时抬 maxHp 与 hp（原版 bug ④）', () => {

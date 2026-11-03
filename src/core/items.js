@@ -6,6 +6,7 @@
  */
 
 import { CARD_STAT_BY_KEY, EQUIPMENT_BY_CODE, MAX_ITEMS, STAT_HARD_CAPS } from './balance.js';
+import { normalizePiece } from './progression.js';
 
 /* ------------------------------------------------------------------ *
  * 装备
@@ -119,6 +120,7 @@ export function applyCard(piece, card) {
     piece[stat.key] = v;
   }
 
+  normalizePiece(piece);
   const after = snapshot(piece);
   const effective = Object.keys(before).some((k) => before[k] !== after[k]);
   return { ok: true, effective, before, after, statName: stat.name, operation: op };

@@ -61,6 +61,7 @@ export function sendError(res, err) {
     AT_CAP: 409,
     TOO_MANY: 409,
     EMPTY_BOARD: 409,
+    ROSTER_FULL: 409,
     PAYLOAD_TOO_LARGE: 413,
     INTERNAL: 500,
   }[code] ?? 500;

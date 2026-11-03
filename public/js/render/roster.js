@@ -18,7 +18,7 @@ export function renderRoster(container, data, handlers = {}) {
     <div class="panel">
       <div class="panel-head">
         <span class="panel-title">我方阵容</span>
-        <span class="panel-sub">${heroes.filter((h) => h.file !== null).length} / ${data.maxBoardPieces ?? 5} 上阵</span>
+        <span class="panel-sub">${heroes.filter((h) => h.file !== null).length} / ${data.maxBoardPieces ?? 5} 上阵 · 库存 ${heroes.length}</span>
       </div>
       <div class="panel-body">
         ${heroes.length === 0
@@ -74,7 +74,7 @@ function heroCard(h, data, handlers) {
         <span class="hero-stars">${'★'.repeat(Math.max(1, Math.min(5, h.star ?? 1)))}</span>
       </div>
       <div class="hero-name">${escapeHtml(h.name)}</div>
-      <div class="hero-lv">Lv.${h.level}${onBoard ? ' · 已上阵' : ''}</div>
+      <div class="hero-lv">Lv.${h.level}${onBoard ? ' · 已上阵' : ''} · <span class="gold-text">战力 ${formatNum(h.power ?? 0)}</span></div>
       <div class="hero-stats">${statRows}</div>
       <div class="hero-tags">${items}</div>
       <div class="hero-actions">

@@ -14,7 +14,8 @@
     "doc": "node tools/build-doc.mjs",
     "balance": "node --disable-warning=ExperimentalWarning tools/balance-sim.mjs",
     "db:reset": "node --disable-warning=ExperimentalWarning tools/reset-db.mjs",
-    "browser": "node tools/browser-test.mjs"
+    "browser": "node tools/browser-test.mjs",
+    "play": "node tools/playthrough-sim.mjs"
   },
   "dependencies": {},
   "devDependencies": {}

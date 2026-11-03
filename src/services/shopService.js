@@ -9,7 +9,7 @@ import { transaction } from '../db/index.js';
 import * as saveRepo from '../db/repo/saveRepo.js';
 import * as metaRepo from '../db/repo/metaRepo.js';
 import { Rng } from '../core/rng.js';
-import { ECONOMY } from '../core/balance.js';
+import { ECONOMY, ROSTER_LIMIT } from '../core/balance.js';
 import { createPiece } from '../core/progression.js';
 import { rollCard } from '../core/items.js';
 import { rollShop, sellValue, shopStar, roundIncome } from '../core/economy.js';
@@ -79,6 +79,10 @@ export function buy(slot, slotIndex) {
       const itemId = saveRepo.insertItem(save.id, target.equipmentCode);
       created = { kind: 'equipment', itemId, equipmentCode: target.equipmentCode, name: target.name };
     } else {
+      const owned = saveRepo.listHeroes(save.id).filter((h) => h.isAlly && h.exist).length;
+      if (owned >= ROSTER_LIMIT) {
+        throw new ServiceError(`棋子库存已满（${ROSTER_LIMIT} 个），先卖掉一些再买`, 'ROSTER_FULL');
+      }
       const template = metaRepo.getTemplate(target.templateId);
       if (!template) throw new ServiceError('棋子模板缺失', 'INTERNAL');
       const star = shopStar(rng, save.chapter, target.star > 1);
