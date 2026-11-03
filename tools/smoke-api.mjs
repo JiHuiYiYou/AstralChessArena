@@ -33,6 +33,19 @@ async function call(method, path, body) {
   return json.data;
 }
 
+/**
+ * 确保金币够用 —— 通过「结束准备阶段」赚收入。
+ * 测试里的购买/升阶/附魔都要花钱，不先备好钱会随机失败。
+ */
+async function ensureGold(min) {
+  for (let i = 0; i < 40; i++) {
+    const shop = await call('GET', '/api/saves/1/shop');
+    if (shop.gold >= min) return true;
+    await call('POST', '/api/saves/1/round');
+  }
+  return false;
+}
+
 async function main() {
   console.log(`\n星穹弈境 API 冒烟测试 → ${BASE}\n`);
 
@@ -113,6 +126,7 @@ async function main() {
       }
     }
     if (pair) {
+      await ensureGold(200);
       const asc = await call('POST', '/api/saves/1/ascend', { heroIdA: pair[0].id, heroIdB: pair[1].id });
       check('升阶：等级 +1', asc.hero.level === Math.max(pair[0].level, pair[1].level) + 1);
       check('升阶：属性 = 取大 + 小的 50%（不是平均）', asc.hero.attack
@@ -123,14 +137,18 @@ async function main() {
   }
 
   // 8c. 附魔：先买一张卡
+  // 注意：刷新商店会换掉槽位内容，所以顺序必须是「赚钱 → 最后刷新 → 立刻买」
   {
-    let card = null;
-    for (let i = 0; i < 30 && !card; i++) {
-      const r = await call('POST', '/api/saves/1/shop/refresh');
-      card = r.slots.find((s) => s.kind === 'card' && !s.sold);
+    let cardIdx = -1;
+    for (let attempt = 0; attempt < 40 && cardIdx < 0; attempt++) {
+      await call('POST', '/api/saves/1/round');            // 先攒钱
+      const r = await call('POST', '/api/saves/1/shop/refresh');  // 最后刷新
+      const c = r.slots.find((sl) => sl.kind === 'card' && !sl.sold);
+      if (c && r.gold >= c.price) cardIdx = c.slotIndex;
     }
-    if (card) {
-      const bought = await call('POST', '/api/saves/1/shop/buy', { slotIndex: card.slotIndex });
+    if (cardIdx >= 0) {
+      await ensureGold(200);
+      const bought = await call('POST', '/api/saves/1/shop/buy', { slotIndex: cardIdx });
       const st = await call('GET', '/api/saves/1');
       const myCard = st.cards.find((c) => c.id === bought.created.cardId);
       const hero = st.heroes.find((h) => h.isAlly && h.exist);
@@ -139,7 +157,7 @@ async function main() {
       const st2 = await call('GET', '/api/saves/1');
       check('附魔：hp ≤ maxHp 不变式', st2.heroes.every((h) => h.hp <= h.maxHp));
     } else {
-      console.log('  · 跳过附魔测试（没刷出卡牌）');
+      console.log('  · 跳过附魔测试（没刷出买得起的卡牌）');
     }
   }
 
