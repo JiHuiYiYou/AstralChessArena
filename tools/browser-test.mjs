@@ -103,6 +103,10 @@ async function main() {
     }
   }
 
+  // 先建一个新档 —— 浏览器测试会改动存档状态（撤棋子、买棋子、战斗），
+  // 不重置的话第二次跑棋盘就是空的，后面全崩
+  await fetch(`${BASE}/api/saves/1`, { method: 'POST' });
+
   pw('close-all');
   await sleep(500);
   pw('open', '--browser=chrome', BASE);
@@ -157,11 +161,21 @@ async function main() {
     '下场生效',
   );
   check('点「下场」后棋子从棋盘上撤下来', after, `before=${before}`);
-  // 放回去，免得影响后面的战斗
+  // 放回去，免得影响后面的战斗 —— 先在阵容面板选中它，再点棋盘格子
+  await waitFor(
+    "(() => { const b = Array.from(document.querySelectorAll('#tab-body [data-act=\"select\"]')).find(x => x.closest('.hero-card')?.classList.contains('dimmed')); if (!b) return false; b.click(); return true; })()",
+    5000,
+    '选中待上场棋子',
+  );
   await waitFor(
     "(() => { const p = document.querySelector('#board-grid .square[data-file=\"0\"][data-rank=\"3\"]'); if (!p) return false; p.click(); return true; })()",
-    4000,
+    5000,
     '重新上场',
+  );
+  await waitFor(
+    "document.querySelectorAll('#board-grid .piece').length > 0",
+    5000,
+    '棋子回到棋盘',
   );
 
   // 5. 升阶：没有同种棋子对子时会提示「需要另一个同种棋子」而不是弹窗，两种都算有响应

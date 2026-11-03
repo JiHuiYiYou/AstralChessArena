@@ -307,6 +307,14 @@ E[伤害] = 攻击 × ((1 - c) + 1.25·c·暴击倍率) / (1 - 0.6·c)
 - 卖出返还 `1 + 星级`（必须先下场）。
 - **装备流程**：商店买到 → 进装备背包（`save_items` 表）→ 在阵容面板点装备 → 选棋子装上 → 从背包移除。
 
+### 7.0 回合流程
+
+界面只有**一个主按钮**「⚔ 开始战斗」：点下去会先结算准备阶段（发收入 + 刷商店），再开战。
+和《云顶之弈》的节奏一致：买棋子 → 摆阵 → 开打 → 自动进入下一回合。
+
+> 之前是两个按钮（「结束准备阶段」+「开始战斗」），玩家忘了先点前者就拿不到收入，
+> 直接卡在第 1 章 —— 合并成一个按钮就没有这个坑了。
+
 ### 7.1 章节选择
 
 - 存档带 `chapter`（当前挑战的章节）与 `max_chapter`（已解锁的最高章节）。
@@ -376,7 +384,7 @@ E[伤害] = 攻击 × ((1 - c) + 1.25·c·暴击倍率) / (1 - 0.6·c)
 | POST | `/api/saves/:slot/shop/buy` | 购买 `{ slotIndex }` |
 | POST | `/api/saves/:slot/shop/sell` | 出售 `{ heroId }` |
 | POST | `/api/saves/:slot/shop/refresh` | 刷新 |
-| POST | `/api/saves/:slot/round` | 结束准备阶段：发收入、刷商店、回合 +1 |
+| POST | `/api/saves/:slot/round` | 结算准备阶段：发收入、刷商店、回合 +1（`开始战斗` 内部会先调它） |
 | POST | `/api/saves/:slot/battle` | 开打 → `{ battleId, events[], result, rewards, chapter }` |
 | POST | `/api/saves/:slot/chapter` | 选择章节 `{ chapter }`（自动夹到已解锁范围） |
 | GET | `/api/saves/:slot/battles` | 战斗记录列表 |

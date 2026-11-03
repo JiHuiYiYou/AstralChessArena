@@ -564,6 +564,10 @@ async function onUseCard(saveCardId) {
 async function onStartBattle() {
   try {
     sfx.ensure();
+    // 先结算准备阶段（发收入 + 刷商店），再开战。
+    // 之前是两个按钮，玩家忘了点「结束准备阶段」就拿不到收入，直接卡死 ——
+    // 现在合成一个按钮，流程和《云顶之弈》一致：买棋子 → 摆阵 → 开打。
+    await api.startRound(state.slot);
     const res = await api.battle(state.slot);
     state.battleCtrl = { value: state.battleCtrl.value, skip: false };
     showBattleStage(res);
@@ -731,16 +735,6 @@ async function reload() {
 
 function bindGlobalEvents() {
   $('btn-battle')?.addEventListener('click', onStartBattle);
-
-  $('btn-round')?.addEventListener('click', async () => {
-    try {
-      const res = await api.startRound(state.slot);
-      toast(`回合 ${res.round} 开始，收入 ${res.income.total} 金（基础 ${res.income.base} / 连胜 ${res.income.streak} / 利息 ${res.income.interest}）`, 'success');
-      await reload();
-    } catch (err) {
-      toast(err.message, 'error');
-    }
-  });
 
   $('btn-battle-back')?.addEventListener('click', backToPrep);
   $('btn-battle-again')?.addEventListener('click', onStartBattle);
