@@ -1101,3 +1101,25 @@ a {
 .side-panel > #result-slot {
   flex: 0 0 auto;
 }
+
+/* ============================================================
+   战斗阶段右栏：结果面板按内容高，日志占大头，历史战报次要
+   （三个面板平分高度会把「战斗记录」压成一条缝）
+   ============================================================ */
+#stage-battle .side-panel {
+  overflow-y: auto;
+}
+
+#stage-battle .side-panel > #result-slot {
+  flex: 0 0 auto;
+}
+
+#stage-battle #panel-log {
+  flex: 1 1 auto;
+  min-height: 150px;
+}
+
+#stage-battle #panel-history {
+  flex: 0 0 auto;
+  height: 210px;
+}

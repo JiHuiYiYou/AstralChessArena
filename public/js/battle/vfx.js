@@ -152,9 +152,14 @@ export function executeFx(name = '') {
   slashV.className = 'fx-execute-slash-v';
   document.body.appendChild(slashV);
 
+  // 主标题只写「处 决」，名字放小字 —— 之前写成「处 决 马·敌方」，
+  // 76px 的字一屏都盖不满，棋盘全被挡住了
   const text = document.createElement('div');
   text.className = 'fx-execute-text';
-  text.textContent = name ? `处 决 ${name}` : '处 决';
+  text.innerHTML = name
+    ? '<span class="fx-execute-main">处 决</span><span class="fx-execute-name"></span>'
+    : '<span class="fx-execute-main">处 决</span>';
+  if (name) text.querySelector('.fx-execute-name').textContent = name;
   document.body.appendChild(text);
 
   setTimeout(() => {

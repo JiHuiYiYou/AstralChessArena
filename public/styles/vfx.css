@@ -752,3 +752,32 @@ body:has(> .fx-checkmate-text) .fx-checkmate-overlay::after {
     transition-duration: .01ms !important;
   }
 }
+
+/* ============================================================
+   处决文字：主标题 + 小字名字
+   （之前是「处 决 马·敌方」一整行 76px，把棋盘全挡住了）
+   ============================================================ */
+.fx-execute-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: normal;
+  text-indent: 0;
+}
+
+.fx-execute-main {
+  font-size: clamp(30px, 4.4vw, 58px);
+  font-weight: 900;
+  letter-spacing: .22em;
+  text-indent: .22em;
+}
+
+.fx-execute-name {
+  font-size: clamp(12px, 1.3vw, 17px);
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-indent: .16em;
+  color: var(--text-secondary);
+  text-shadow: 0 0 12px rgba(0, 0, 0, .9);
+}
