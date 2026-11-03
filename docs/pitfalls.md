@@ -142,3 +142,34 @@ SQLite 会把占位符绑成 NULL，**不报错**，查询安静地返回空数�
 同一个工作目录下还有另外两个作业的会话（JHYY 介绍页、jj 回退作业）。
 `tools/build-doc.mjs` 现在会按「cwd 在本工作目录内 **且** 首条提示词命中本项目关键词」
 双重过滤。
+
+### B21. `playwright-cli eval` 只接受**单个表达式**
+
+```
+playwright-cli --raw eval "document.getElementById('btn').click(); 'ok'"   # ✗ SyntaxError
+playwright-cli --raw eval "(() => { document.getElementById('btn').click(); return 'ok'; })()"  # ✓
+```
+
+多语句会被判语法错误，而且**报错只在 stderr 里**，很容易以为「点击没生效」。
+写自动化脚本时一律包成 IIFE。
+
+### B22. `playwright-cli` 经过 cmd.exe 时，**带空格的参数会被拆开**
+
+`execSync('playwright-cli --raw eval "some code with spaces"')` 会被 cmd.exe 拆成多个参数，
+eval 收到的是残缺的代码，然后打印帮助文本 —— 看起来像「eval 坏了」。
+
+**解法：绕过 shell，直接调它的 JS 入口**：
+
+```js
+const PW_JS = 'C:/Users/liuzhen/miniconda3/node_modules/@playwright/cli/playwright-cli.js';
+execFileSync(process.execPath, [PW_JS, '--raw', 'eval', code], { encoding: 'utf8' });
+```
+
+### B23. 自动化里**不要用固定 sleep**，要轮询等待
+
+每次 `playwright-cli` 调用本身要 1~2 秒，固定 sleep 会出现两种失败：
+「等太久」和「状态还没变就断言」。
+而且像 toast 这种 2.6 秒就消失的元素，固定 sleep 之后去看必然是空的 ——
+**看起来像 bug，其实是测试写错了**。
+
+用 `waitFor(code, timeout)` 轮询 DOM 条件。

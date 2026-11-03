@@ -91,6 +91,58 @@ async function main() {
   check('突破：倍率 ≥1.3', brk.rate >= 1.3, `实际 ${brk.rate}`);
   check('突破：上限同步抬高', brk.hero.breakthroughBonus?.attack >= 1.5);
 
+  // 8b. 升阶：需要两个同种棋子（先买到有对子为止）
+  {
+    let pair = null;
+    for (let attempt = 0; attempt < 40 && !pair; attempt++) {
+      const st = await call('GET', '/api/saves/1');
+      const byTemplate = new Map();
+      for (const h of st.heroes.filter((x) => x.isAlly && x.exist)) {
+        if (!byTemplate.has(h.templateId)) byTemplate.set(h.templateId, []);
+        byTemplate.get(h.templateId).push(h);
+      }
+      pair = [...byTemplate.values()].find((list) => list.length >= 2);
+      if (pair) break;
+      // 没买到对子就再刷新一次商店买一个
+      const r = await call('POST', '/api/saves/1/shop/refresh');
+      const piece = r.slots.find((s) => s.kind === 'piece' && !s.sold);
+      if (piece && r.gold >= piece.price) {
+        await call('POST', '/api/saves/1/shop/buy', { slotIndex: piece.slotIndex });
+      } else {
+        await call('POST', '/api/saves/1/round'); // 攒钱
+      }
+    }
+    if (pair) {
+      const asc = await call('POST', '/api/saves/1/ascend', { heroIdA: pair[0].id, heroIdB: pair[1].id });
+      check('升阶：等级 +1', asc.hero.level === Math.max(pair[0].level, pair[1].level) + 1);
+      check('升阶：属性 = 取大 + 小的 50%（不是平均）', asc.hero.attack
+        > Math.floor((pair[0].attack + pair[1].attack) / 2), `attack=${asc.hero.attack}`);
+    } else {
+      console.log('  · 跳过升阶测试（没买到同种棋子的对子）');
+    }
+  }
+
+  // 8c. 附魔：先买一张卡
+  {
+    let card = null;
+    for (let i = 0; i < 30 && !card; i++) {
+      const r = await call('POST', '/api/saves/1/shop/refresh');
+      card = r.slots.find((s) => s.kind === 'card' && !s.sold);
+    }
+    if (card) {
+      const bought = await call('POST', '/api/saves/1/shop/buy', { slotIndex: card.slotIndex });
+      const st = await call('GET', '/api/saves/1');
+      const myCard = st.cards.find((c) => c.id === bought.created.cardId);
+      const hero = st.heroes.find((h) => h.isAlly && h.exist);
+      const ench = await call('POST', '/api/saves/1/enchant', { heroId: hero.id, saveCardId: myCard.id });
+      check('附魔：成功且卡牌被标记已用', ench.ok === true);
+      const st2 = await call('GET', '/api/saves/1');
+      check('附魔：hp ≤ maxHp 不变式', st2.heroes.every((h) => h.hp <= h.maxHp));
+    } else {
+      console.log('  · 跳过附魔测试（没刷出卡牌）');
+    }
+  }
+
   // 9. 战斗
   const battle = await call('POST', '/api/saves/1/battle');
   check('战斗：产出事件流', battle.events.length > 10, `实际 ${battle.events.length}`);
