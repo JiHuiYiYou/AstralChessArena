@@ -73,6 +73,18 @@ npm run doc               # 从会话记录生成提交用的 Word 文档
 
 ---
 
+## 作业提交材料
+
+| 路径 | 说明 |
+|---|---|
+| `deliverables/提交材料.docx` | **要交的那一份**：项目简介 / 参考了哪些游戏 / 游戏截图 / 全部提示词输入与模型输出（按会话分段并标注新会话）/ AGENTS、SPEC、TASK 与 docs/ 全文 |
+| `deliverables/screenshots/` | 7 张游戏截图（已内嵌进 docx） |
+| `提交材料.docx`（根目录） | 上面那份的**副本**，方便直接取 |
+
+重新生成：`npm run doc`（会话记录 → Markdown → pandoc → docx）。
+
+---
+
 ## 目录结构
 
 ```
