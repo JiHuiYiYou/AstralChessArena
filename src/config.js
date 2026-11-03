@@ -22,8 +22,5 @@ export const PREFERRED_PORT = Number(process.env.PORT ?? 5180);
 /** 端口顺延上限 */
 export const MAX_PORT_TRIES = 20;
 
-/** 每次最多查找的空存档槽 */
-export const SAVE_SLOTS = 3;
-
 /** 战斗最大回合数，超时判平局（不是判负 —— 原版 bug ⑨） */
 export const MAX_ROUNDS = 40;

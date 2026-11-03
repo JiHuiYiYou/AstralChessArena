@@ -46,11 +46,6 @@ export function pieceEl(gridEl, id) {
   return pieceIndex.get(id) ?? null;
 }
 
-/** 棋盘上所有棋子元素 */
-export function allPieceEls() {
-  return [...pieceIndex.values()];
-}
-
 /**
  * 把棋子渲染到棋盘上。
  * @param {HTMLElement} gridEl
@@ -162,16 +157,6 @@ export function animateMoveTo(gridEl, id, file, rank) {
       setTimeout(resolve, 190);
     }, 180);
   });
-}
-
-/** 立刻把棋子放到某格（不播动画，用于战斗开局摆位） */
-export function placePieceNow(gridEl, id, file, rank) {
-  const el = pieceIndex.get(id);
-  const target = squareEl(gridEl, file, rank);
-  if (el && target) {
-    target.appendChild(el);
-    el.style.transform = 'translate3d(0, 0, 0)';
-  }
 }
 
 /** 更新某个棋子的血条（战斗中的实时刷新） */

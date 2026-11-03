@@ -221,9 +221,6 @@ export const BREAK_ROUNDS = 3;
 /** 处决：目标生命低于此比例直接斩杀 */
 export const EXECUTE_HP_RATIO = 0.15;
 
-/** 铁卫「王之守护」光环减伤 */
-export const GUARD_AURA_REDUCTION = 0.10;
-
 /* ------------------------------------------------------------------ *
  * 经济与商店
  * ------------------------------------------------------------------ */
@@ -381,5 +378,3 @@ export const CARD_STATS = [
 
 export const CARD_STAT_BY_KEY = Object.fromEntries(CARD_STATS.map((c) => [c.key, c]));
 
-/** 卡的稀有度权重 */
-export const CARD_RARITY_WEIGHT = { common: 70, rare: 26, epic: 4 };

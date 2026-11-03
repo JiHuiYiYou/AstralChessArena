@@ -4,30 +4,6 @@
 
 import { parseJson, queryAll, queryOne } from '../index.js';
 
-/** 职业 */
-export function listProfessions() {
-  return queryAll('SELECT * FROM professions ORDER BY id');
-}
-
-/** 羁绊 */
-export function listSynergies() {
-  const rows = queryAll(`
-    SELECT s.*, p.code AS profession_code, p.name AS profession_name, p.color AS profession_color
-    FROM synergies s JOIN professions p ON p.id = s.profession_id
-    ORDER BY s.profession_id, s.tier
-  `);
-  return rows.map((r) => ({
-    id: r.id,
-    professionId: r.profession_id,
-    professionCode: r.profession_code,
-    professionName: r.profession_name,
-    professionColor: r.profession_color,
-    tier: r.tier,
-    countRequired: r.count_required,
-    bonus: parseJson(r.bonus_json, {}),
-  }));
-}
-
 /** 棋子模板 */
 export function listTemplates() {
   return queryAll(`
@@ -43,15 +19,6 @@ export function getTemplate(id) {
     FROM piece_templates t JOIN professions p ON p.id = t.profession_id
     WHERE t.id = ?
   `, id);
-  return row ? mapTemplate(row) : null;
-}
-
-export function getTemplateByCode(code) {
-  const row = queryOne(`
-    SELECT t.*, p.code AS profession_code, p.name AS profession_name, p.color AS profession_color
-    FROM piece_templates t JOIN professions p ON p.id = t.profession_id
-    WHERE t.code = ?
-  `, code);
   return row ? mapTemplate(row) : null;
 }
 

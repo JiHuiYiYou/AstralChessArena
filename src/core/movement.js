@@ -62,15 +62,6 @@ export function captureTargets(board, piece) {
   }
 }
 
-/** 全部可落脚点（移动 ∪ 吃子 ∪ 吃过路兵 ∪ 王车易位） */
-export function allTargets(board, piece) {
-  const set = new Set([...moveTargets(board, piece), ...captureTargets(board, piece)]);
-  const ep = enPassantTarget(board, piece);
-  if (ep !== null) set.add(ep);
-  for (const m of castlingMoves(board, piece)) set.add(m.to);
-  return [...set];
-}
-
 /* ------------------------------------------------------------------ *
  * 各棋子的具体走法
  * ------------------------------------------------------------------ */
@@ -176,6 +167,15 @@ function kingMoves(board, piece, captureOnly = false) {
 /* ------------------------------------------------------------------ *
  * 特殊规则
  * ------------------------------------------------------------------ */
+
+/** 全部可落脚点（移动 ∪ 吃子 ∪ 吃过路兵 ∪ 王车易位） */
+export function allTargets(board, piece) {
+  const set = new Set([...moveTargets(board, piece), ...captureTargets(board, piece)]);
+  const ep = enPassantTarget(board, piece);
+  if (ep !== null) set.add(ep);
+  for (const m of castlingMoves(board, piece)) set.add(m.to);
+  return [...set];
+}
 
 /** 兵走到升变行？ */
 export function isPromotion(piece, toIndex) {

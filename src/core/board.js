@@ -14,9 +14,6 @@ export const SIDE_ALLY = 'ally';
 /** 敌方阵营 */
 export const SIDE_ENEMY = 'enemy';
 
-/** 文件名字符 */
-export const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-
 /** 格坐标 → 棋盘索引 */
 export function sq(file, rank) {
   return rank * BOARD_SIZE + file;
@@ -25,19 +22,6 @@ export function sq(file, rank) {
 /** 棋盘索引 → { file, rank } */
 export function coord(index) {
   return { file: index % BOARD_SIZE, rank: Math.floor(index / BOARD_SIZE) };
-}
-
-/** 格坐标 → 人类可读记号，如 "e4" */
-export function squareName(file, rank) {
-  return `${FILES[file]}${rank + 1}`;
-}
-
-/** 解析 "e4" → { file, rank }；非法返回 null */
-export function parseSquare(name) {
-  if (typeof name !== 'string') return null;
-  const m = /^([a-h])([1-8])$/.exec(name.trim().toLowerCase());
-  if (!m) return null;
-  return { file: FILES.indexOf(m[1]), rank: Number(m[2]) - 1 };
 }
 
 /** 坐标是否在棋盘内 */
@@ -93,43 +77,7 @@ export function deployRanks(side) {
   return side === SIDE_ALLY ? [0, 1, 2, 3] : [4, 5, 6, 7];
 }
 
-/** 该阵营能否在此格布阵 */
-export function isDeployZone(side, rank) {
-  return deployRanks(side).includes(rank);
-}
-
 /** 阵营的「前进方向」：己方向 rank 增大 */
 export function forwardDelta(side) {
   return side === SIDE_ALLY ? 1 : -1;
-}
-
-/** 棋盘上所有棋子 */
-export function allPieces(board) {
-  return board.filter(Boolean);
-}
-
-/** 某一方的棋子列表 */
-export function piecesOfSide(board, side) {
-  return board.filter((p) => p && p.side === side);
-}
-
-/** 棋盘快照（用于事件流的 battle_start） */
-export function boardSnapshot(board) {
-  return board.map((p, i) => {
-    if (!p) return null;
-    const { file, rank } = coord(i);
-    return {
-      id: p.id,
-      side: p.side,
-      code: p.code,
-      name: p.name,
-      glyph: p.glyph,
-      file,
-      rank,
-      hp: p.hp,
-      maxHp: p.maxHp,
-      isKing: !!p.isKing,
-      profession: p.profession,
-    };
-  });
 }
