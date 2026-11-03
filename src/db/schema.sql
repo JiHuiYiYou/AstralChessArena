@@ -76,6 +76,7 @@ CREATE TABLE IF NOT EXISTS saves (
   version             INTEGER NOT NULL DEFAULT 1,
   gold                INTEGER NOT NULL DEFAULT 0,
   chapter             INTEGER NOT NULL DEFAULT 1,
+  max_chapter         INTEGER NOT NULL DEFAULT 1,
   round               INTEGER NOT NULL DEFAULT 1,
   streak_win          INTEGER NOT NULL DEFAULT 0,
   streak_lose         INTEGER NOT NULL DEFAULT 0,
@@ -131,20 +132,31 @@ CREATE TABLE IF NOT EXISTS save_cards (
 );
 CREATE INDEX IF NOT EXISTS idx_save_cards_save ON save_cards(save_id);
 
+-- ---------- 存档里的装备背包 ----------
+CREATE TABLE IF NOT EXISTS save_items (
+  id              INTEGER PRIMARY KEY,
+  save_id         INTEGER NOT NULL REFERENCES saves(id) ON DELETE CASCADE,
+  equipment_code  TEXT NOT NULL,
+  acquired_at     TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_save_items_save ON save_items(save_id);
+
 -- ---------- 商店槽位（每回合刷新） ----------
 CREATE TABLE IF NOT EXISTS shop_slots (
-  id           INTEGER PRIMARY KEY,
-  save_id      INTEGER NOT NULL REFERENCES saves(id) ON DELETE CASCADE,
-  slot_index   INTEGER NOT NULL,
-  kind         TEXT NOT NULL DEFAULT 'piece',   -- piece | card
-  template_id  INTEGER REFERENCES piece_templates(id),
-  card_id      INTEGER REFERENCES cards(id),
-  name         TEXT NOT NULL DEFAULT '',
-  glyph        TEXT NOT NULL DEFAULT '',
-  profession   TEXT NOT NULL DEFAULT '',
-  star         INTEGER NOT NULL DEFAULT 1,
-  price        INTEGER NOT NULL DEFAULT 0,
-  sold         INTEGER NOT NULL DEFAULT 0,
+  id              INTEGER PRIMARY KEY,
+  save_id         INTEGER NOT NULL REFERENCES saves(id) ON DELETE CASCADE,
+  slot_index      INTEGER NOT NULL,
+  kind            TEXT NOT NULL DEFAULT 'piece',   -- piece | card | equipment
+  template_id     INTEGER REFERENCES piece_templates(id),
+  card_id         INTEGER REFERENCES cards(id),
+  equipment_code  TEXT NOT NULL DEFAULT '',
+  name            TEXT NOT NULL DEFAULT '',
+  glyph           TEXT NOT NULL DEFAULT '',
+  profession      TEXT NOT NULL DEFAULT '',
+  rarity          TEXT NOT NULL DEFAULT '',
+  star            INTEGER NOT NULL DEFAULT 1,
+  price           INTEGER NOT NULL DEFAULT 0,
+  sold            INTEGER NOT NULL DEFAULT 0,
   UNIQUE (save_id, slot_index)
 );
 

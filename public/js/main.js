@@ -32,6 +32,7 @@ const state = {
   save: null,
   heroes: [],
   cards: [],
+  items: [],
   shop: null,
   selectedHeroId: null,
   tab: 'shop',
@@ -123,6 +124,7 @@ async function loadSave(slot) {
   state.save = data.save;
   state.heroes = data.heroes;
   state.cards = data.cards;
+  state.items = data.items ?? [];
   state.shop = null;
   state.selectedHeroId = null;
   await refreshShop();
@@ -144,7 +146,38 @@ async function refreshShop() {
 function renderAll() {
   renderResBar();
   renderBoard();
+  renderChapterSelect();
   renderTab();
+}
+
+/** 章节选择（只能选已解锁的） */
+function renderChapterSelect() {
+  const box = $('chapter-select');
+  if (!box) return;
+  const cur = state.save?.chapter ?? 1;
+  const max = state.save?.maxChapter ?? 1;
+  const total = 12;
+  const chips = [];
+  for (let c = 1; c <= total; c++) {
+    const locked = c > max;
+    chips.push(`<button class="chapter-chip ${c === cur ? 'active' : ''} ${locked ? 'locked' : ''}"
+      data-chapter="${c}" ${locked ? 'disabled' : ''}>${c}</button>`);
+  }
+  box.innerHTML = chips.join('');
+  box.querySelectorAll('[data-chapter]').forEach((el) => {
+    el.addEventListener('click', async () => {
+      const c = Number(el.dataset.chapter);
+      if (c === cur) return;
+      try {
+        await api.setChapter(state.slot, c);
+        state.save.chapter = c;
+        sfx.click();
+        renderAll();
+      } catch (err) {
+        toast(err.message, 'error');
+      }
+    });
+  });
 }
 
 function renderResBar() {
@@ -200,6 +233,7 @@ function renderTab() {
   } else if (state.tab === 'roster') {
     renderRoster(body, {
       heroes: state.heroes,
+      items: state.items,
       templates,
       equipments,
       selectedId: state.selectedHeroId,
@@ -210,6 +244,7 @@ function renderTab() {
       onAscend: onAscend,
       onBreakthrough: onBreakthrough,
       onEquip: onEquip,
+      onEquipItem: onEquipItem,
       onSell: onSell,
     });
   } else if (state.tab === 'synergy') {
@@ -261,6 +296,14 @@ function synergyRows() {
  * ------------------------------------------------------------------ */
 
 function onPieceClick(id) {
+  sfx.click();
+  state.selectedHeroId = state.selectedHeroId === id ? null : id;
+  renderBoard();
+  renderTab();
+}
+
+/** 从阵容面板里选中棋子（和点棋盘上的棋子等价） */
+function onSelectHero(id) {
   sfx.click();
   state.selectedHeroId = state.selectedHeroId === id ? null : id;
   renderBoard();
@@ -435,6 +478,43 @@ async function onEquip(heroId, code) {
   }
 }
 
+/** 从装备背包里挑一个棋子装上 */
+async function onEquipItem(itemId) {
+  const allies = state.heroes.filter((h) => h.isAlly && h.exist);
+  if (allies.length === 0) {
+    toast('没有可以装备的棋子', 'error');
+    return;
+  }
+  const item = state.items.find((i) => i.id === itemId);
+  const eq = state.meta?.equipments.find((e) => e.code === item?.code);
+  const body = allies.map((h) => `
+    <div class="roster-row">
+      <div style="flex:1"><strong>${escapeHtml(h.name)}</strong>
+        <span class="muted">${(h.items ?? []).length}/3 装备</span></div>
+      <button class="btn btn-gold btn-sm" data-act="do" data-hero="${h.id}">装备</button>
+    </div>`).join('');
+
+  openModal({
+    title: `装备 · ${escapeHtml(eq?.name ?? '')}`,
+    bodyHtml: `<div class="roster-list">${body}</div>`,
+  });
+
+  $('modal-panel').querySelectorAll('[data-act="do"]').forEach((el) => {
+    el.addEventListener('click', async () => {
+      try {
+        await api.equipItem(state.slot, itemId, Number(el.dataset.hero));
+        closeModal();
+        sfx.success();
+        toast(`装备成功：${eq?.name ?? ''}`, 'success');
+        await reload();
+      } catch (err) {
+        sfx.error();
+        toast(err.message, 'error');
+      }
+    });
+  });
+}
+
 async function onUseCard(saveCardId) {
   const allies = state.heroes.filter((h) => h.isAlly && h.exist);
   if (allies.length === 0) {
@@ -541,6 +621,7 @@ async function reload() {
   state.save = data.save;
   state.heroes = data.heroes;
   state.cards = data.cards;
+  state.items = data.items ?? [];
   await refreshShop();
   if (state.view === 'prep') renderAll();
   else renderResBar();

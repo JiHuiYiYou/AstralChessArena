@@ -234,4 +234,34 @@ export function toggleEquipment(slot, heroId, equipmentCode) {
   });
 }
 
+/**
+ * 把背包里的装备装到棋子身上（并从背包移除）。
+ * 装备只有在商店里买得到 —— 没有装备就等于没有这个系统。
+ */
+export function equipFromBag(slot, itemId, heroId) {
+  return transaction(() => {
+    const save = requireSave(slot);
+    const hero = saveRepo.getHero(heroId);
+    if (!hero || !hero.exist) throw new ServiceError('棋子不存在', 'NOT_FOUND');
+
+    const item = saveRepo.listItems(save.id).find((i) => i.id === itemId);
+    if (!item) throw new ServiceError('装备不存在', 'NOT_FOUND');
+
+    const check = canEquip(hero, item.code);
+    if (!check.ok) throw new ServiceError(check.reason, 'BAD_REQUEST');
+
+    hero.items = [...(hero.items ?? []), item.code];
+    saveRepo.updateHero(heroId, hero);
+    saveRepo.removeItem(itemId);
+
+    return { ok: true, items: hero.items, describe: describeEquipment(item.code) };
+  });
+}
+
+/** 装备背包 */
+export function listBag(slot) {
+  const save = requireSave(slot);
+  return saveRepo.listItems(save.id);
+}
+
 export { ServiceError };

@@ -75,6 +75,9 @@ export function buy(slot, slotIndex) {
       const base = pool.find((c) => c.stat === card.stat);
       const cardId = saveRepo.insertSaveCard(save.id, base.id);
       created = { kind: 'card', cardId, stat: card.stat, statName: card.statName, operation: card.operation, value: card.value };
+    } else if (target.kind === 'equipment') {
+      const itemId = saveRepo.insertItem(save.id, target.equipmentCode);
+      created = { kind: 'equipment', itemId, equipmentCode: target.equipmentCode, name: target.name };
     } else {
       const template = metaRepo.getTemplate(target.templateId);
       if (!template) throw new ServiceError('棋子模板缺失', 'INTERNAL');

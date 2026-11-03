@@ -6,6 +6,16 @@ import { formatNum } from '../battle/vfx.js';
 
 const RARITY_LABEL = { common: '普通', rare: '稀有', epic: '史诗' };
 
+const RARITY_COLOR = {
+  common: 'var(--text-secondary)',
+  rare: 'var(--accent-blue)',
+  epic: 'var(--accent-purple)',
+};
+
+function rarityColor(r) {
+  return RARITY_COLOR[r] ?? 'var(--text-secondary)';
+}
+
 /**
  * @param {HTMLElement} container
  * @param {object} data { slots, gold, refreshCost, freeRefreshLeft }
@@ -23,6 +33,14 @@ export function renderShop(container, data, handlers = {}) {
       return `<div class="shop-slot" data-slot="${s.slotIndex}">
         <div class="shop-slot-glyph">🃏</div>
         <div class="shop-slot-name">随机卡牌</div>
+        ${price}
+      </div>`;
+    }
+    if (s.kind === 'equipment') {
+      return `<div class="shop-slot" data-slot="${s.slotIndex}">
+        <div class="shop-slot-glyph">⚙</div>
+        <div class="shop-slot-name">${escapeHtml(s.name ?? '装备')}</div>
+        <div class="shop-slot-star" style="color:${rarityColor(s.rarity)}">${RARITY_LABEL[s.rarity] ?? s.rarity}</div>
         ${price}
       </div>`;
     }

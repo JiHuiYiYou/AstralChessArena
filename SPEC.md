@@ -260,9 +260,20 @@ E[伤害] = 攻击 × ((1 - c) + 1.25·c·暴击倍率) / (1 - 0.6·c)
 ```
 
 - 商店 5 槽，每回合**免费刷新 1 次**，之后 2 金/次。
-- 槽位 10% 概率是随机卡牌，否则是棋子（权重随章节变化：王/后概率随章节上升）。
+- 槽位构成：**10% 随机卡牌**、**18% 装备**、其余是棋子（权重随章节变化：王/后概率随章节上升）。
 - 棋子价格 `2 + round(基础攻击/18) + round(基础生命/160) + 已有同种数量`。
+- 装备价格按稀有度：普通 12 / 稀有 20 / 史诗 32。
 - 卖出返还 `1 + 星级`（必须先下场）。
+- **装备流程**：商店买到 → 进装备背包（`save_items` 表）→ 在阵容面板点装备 → 选棋子装上 → 从背包移除。
+
+### 7.1 章节选择
+
+- 存档带 `chapter`（当前挑战的章节）与 `max_chapter`（已解锁的最高章节）。
+- 胜利后 `chapter + 1`（封顶 12），并把 `max_chapter` 推到相同位置。
+- 玩家可以在准备阶段点章节按钮任选 `≤ max_chapter` 的章节 —— **可以回头刷旧章节**。
+- 越往后敌方越强：`等级 = 1 + floor(章节×0.9) + floor(玩家回合×0.25)`，
+  `生命系数 = 1 + 0.18×(章节-1)`，`攻击系数 = 1 + 0.22×(章节-1)`，
+  敌方棋子数 `min(5, 2 + floor(章节/2))`，星级 `min(5, 1+floor(章节/3))`，装备 `min(3, floor(章节/2))`。
 
 ---
 
@@ -310,12 +321,15 @@ E[伤害] = 攻击 × ((1 - c) + 1.25·c·暴击倍率) / (1 - 0.6·c)
 | POST | `/api/saves/:slot/breakthrough` | 突破 `{ heroId, stat }` |
 | POST | `/api/saves/:slot/enchant` | 附魔 `{ heroId, saveCardId }` |
 | POST | `/api/saves/:slot/equip` | 装/卸装备 `{ heroId, equipmentCode }` |
+| GET | `/api/saves/:slot/bag` | 装备背包 |
+| POST | `/api/saves/:slot/equip-item` | 把背包里的装备装到棋子上 `{ itemId, heroId }` |
 | GET | `/api/saves/:slot/shop` | 商店面板 |
 | POST | `/api/saves/:slot/shop/buy` | 购买 `{ slotIndex }` |
 | POST | `/api/saves/:slot/shop/sell` | 出售 `{ heroId }` |
 | POST | `/api/saves/:slot/shop/refresh` | 刷新 |
 | POST | `/api/saves/:slot/round` | 结束准备阶段：发收入、刷商店、回合 +1 |
 | POST | `/api/saves/:slot/battle` | 开打 → `{ battleId, events[], result, rewards, chapter }` |
+| POST | `/api/saves/:slot/chapter` | 选择章节 `{ chapter }`（自动夹到已解锁范围） |
 | GET | `/api/saves/:slot/battles` | 战斗记录列表 |
 | GET | `/api/battles/:id` | 回看某场战斗 |
 

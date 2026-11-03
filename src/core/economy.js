@@ -2,7 +2,7 @@
  * economy.js —— 经济、商店与回合结算。
  */
 
-import { ECONOMY, PIECE_TEMPLATES, TEMPLATE_BY_CODE, chapterConfig } from './balance.js';
+import { ECONOMY, EQUIPMENTS, PIECE_TEMPLATES, TEMPLATE_BY_CODE, chapterConfig } from './balance.js';
 
 /**
  * 回合收入明细。
@@ -64,7 +64,7 @@ export function starOf(piece) {
 
 /**
  * 刷新商店：生成 5 个槽位。
- * 槽位可以是棋子，也可以是卡牌（10% 概率）。
+ * 槽位可以是棋子（常见）、装备（中概率）或卡牌（少量）。
  * @param {import('./rng.js').Rng} rng
  * @param {number} round 当前回合
  * @param {number} chapter 当前章节
@@ -74,8 +74,23 @@ export function rollShop(rng, round, chapter) {
   // 章节越高，高星棋子出现概率越大
   const highStarChance = Math.min(0.45, 0.04 * chapter);
   for (let i = 0; i < ECONOMY.shopSlots; i++) {
-    if (rng.chance(0.10)) {
+    const roll = rng.float();
+    if (roll < 0.10) {
       slots.push({ kind: 'card', price: 3 });
+      continue;
+    }
+    if (roll < 0.28) {
+      const eq = rng.pick(EQUIPMENTS.map((e) => ({
+        ...e,
+        weight: e.rarity === 'common' ? 50 : e.rarity === 'rare' ? 30 : 12,
+      })));
+      slots.push({
+        kind: 'equipment',
+        equipmentCode: eq.code,
+        name: eq.name,
+        rarity: eq.rarity,
+        price: EQUIPMENT_PRICE[eq.rarity] ?? 12,
+      });
       continue;
     }
     const pool = PIECE_TEMPLATES.map((t) => {
@@ -99,6 +114,9 @@ export function rollShop(rng, round, chapter) {
   }
   return slots;
 }
+
+/** 装备售价（按稀有度） */
+export const EQUIPMENT_PRICE = { common: 12, rare: 20, epic: 32 };
 
 /** 商店里买到的棋子的初始星级（受章节与 highStar 影响） */
 export function shopStar(rng, chapter, highStar) {

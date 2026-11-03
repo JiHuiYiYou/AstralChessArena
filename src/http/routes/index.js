@@ -75,6 +75,11 @@ export function buildRouter() {
   router.post('/api/saves/:slot/equip', ({ params, body }) =>
     rosterService.toggleEquipment(Number(params.slot), Number(body.heroId), body.equipmentCode));
 
+  router.get('/api/saves/:slot/bag', ({ params }) => rosterService.listBag(Number(params.slot)));
+
+  router.post('/api/saves/:slot/equip-item', ({ params, body }) =>
+    rosterService.equipFromBag(Number(params.slot), Number(body.itemId), Number(body.heroId)));
+
   /* ---------------- 商店 ---------------- */
 
   router.get('/api/saves/:slot/shop', ({ params }) => shopService.getShop(Number(params.slot)));
@@ -92,6 +97,9 @@ export function buildRouter() {
   /* ---------------- 战斗 ---------------- */
 
   router.post('/api/saves/:slot/battle', ({ params }) => battleService.startBattle(Number(params.slot)));
+
+  router.post('/api/saves/:slot/chapter', ({ params, body }) =>
+    battleService.setChapter(Number(params.slot), Number(body.chapter)));
 
   router.get('/api/saves/:slot/battles', ({ params, query }) =>
     battleService.listBattles(Number(params.slot), Number(query.limit ?? 30)));

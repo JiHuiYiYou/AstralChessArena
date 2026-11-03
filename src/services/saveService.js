@@ -20,6 +20,7 @@ export function getState(slot) {
     save,
     heroes: saveRepo.listHeroes(save.id),
     cards: saveRepo.listSaveCards(save.id),
+    items: saveRepo.listItems(save.id),
     shop: saveRepo.listShopSlots(save.id),
   };
 }
@@ -40,6 +41,7 @@ export function createNew(slot) {
   return transaction((d) => {
     d.prepare('DELETE FROM save_heroes WHERE save_id IN (SELECT id FROM saves WHERE slot = ?)').run(slot);
     d.prepare('DELETE FROM save_cards WHERE save_id IN (SELECT id FROM saves WHERE slot = ?)').run(slot);
+    d.prepare('DELETE FROM save_items WHERE save_id IN (SELECT id FROM saves WHERE slot = ?)').run(slot);
     d.prepare('DELETE FROM shop_slots WHERE save_id IN (SELECT id FROM saves WHERE slot = ?)').run(slot);
 
     const save = saveRepo.createSave(slot, seed, rng.snapshot());

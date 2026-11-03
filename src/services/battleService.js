@@ -76,10 +76,12 @@ export function startBattle(slot) {
     const nextChapter = outcome.result === 'win'
       ? Math.min(CHAPTERS, save.chapter + 1)
       : save.chapter;
+    const maxChapter = Math.max(save.maxChapter ?? 1, nextChapter);
 
     saveRepo.updateSave(save.id, {
       gold: save.gold + gained,
       chapter: nextChapter,
+      max_chapter: maxChapter,
       streak_win: nextStreakWin,
       streak_lose: nextStreakLose,
       rng_state: rng.snapshot(),
@@ -98,11 +100,27 @@ export function startBattle(slot) {
       state: {
         gold: save.gold + gained,
         chapter: nextChapter,
+        maxChapter,
         round: save.round,
         streakWin: nextStreakWin,
         streakLose: nextStreakLose,
       },
     };
+  });
+}
+
+/**
+ * 选择章节（只能选已解锁的，即 ≤ maxChapter）。
+ * 可以回头刷旧章节 —— 这是自走棋的正常玩法。
+ */
+export function setChapter(slot, chapter) {
+  return transaction(() => {
+    const save = saveRepo.getSaveRow(slot);
+    if (!save) throw new ServiceError('存档不存在', 'NOT_FOUND');
+    const max = save.maxChapter ?? 1;
+    const target = Math.max(1, Math.min(max, Math.floor(chapter)));
+    saveRepo.updateSave(save.id, { chapter: target });
+    return { ok: true, chapter: target, maxChapter: max };
   });
 }
 

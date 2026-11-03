@@ -114,7 +114,7 @@
 @media (min-width: 769px) {
   .board-frame {
     width: 100%;
-    max-width: calc(100vh - 215px);
+    max-width: calc(100vh - 245px);
     margin-left: auto;
     margin-right: auto;
   }

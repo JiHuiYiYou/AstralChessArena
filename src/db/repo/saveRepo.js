@@ -44,7 +44,7 @@ export function createSave(slot, rngSeed, rngState) {
 
 export function updateSave(saveId, fields) {
   const allowed = new Set([
-    'gold', 'chapter', 'round', 'streak_win', 'streak_lose',
+    'gold', 'chapter', 'max_chapter', 'round', 'streak_win', 'streak_lose',
     'shop_refreshed_round', 'rng_seed', 'rng_state',
   ]);
   const sets = [];
@@ -167,6 +167,30 @@ export function markCardUsed(saveCardId, heroId) {
   getDb().prepare('UPDATE save_cards SET is_used = 1, used_hero_id = ? WHERE id = ?').run(heroId, saveCardId);
 }
 
+/* -------------------------- 装备背包 -------------------------- */
+
+export function listItems(saveId) {
+  return queryAll(
+    'SELECT id, equipment_code, acquired_at FROM save_items WHERE save_id = ? ORDER BY id',
+    saveId,
+  ).map((r) => ({
+    id: r.id,
+    code: r.equipment_code,
+    acquiredAt: r.acquired_at,
+  }));
+}
+
+export function insertItem(saveId, equipmentCode) {
+  const info = getDb()
+    .prepare('INSERT INTO save_items (save_id, equipment_code) VALUES (?, ?)')
+    .run(saveId, equipmentCode);
+  return Number(info.lastInsertRowid);
+}
+
+export function removeItem(itemId) {
+  getDb().prepare('DELETE FROM save_items WHERE id = ?').run(itemId);
+}
+
 /* -------------------------- 商店 -------------------------- */
 
 export function listShopSlots(saveId) {
@@ -184,11 +208,13 @@ export function listShopSlots(saveId) {
     templateId: r.template_id,
     templateCode: r.template_code,
     cardId: r.card_id,
+    equipmentCode: r.equipment_code,
     name: r.name,
     glyph: r.glyph || r.template_glyph || '',
     profession: r.profession,
     professionName: r.profession_name,
     professionColor: r.profession_color,
+    rarity: r.rarity,
     star: r.star,
     price: r.price,
     sold: !!r.sold,
@@ -199,14 +225,14 @@ export function replaceShop(saveId, slots) {
   const db = getDb();
   db.prepare('DELETE FROM shop_slots WHERE save_id = ?').run(saveId);
   const ins = db.prepare(`
-    INSERT INTO shop_slots (save_id, slot_index, kind, template_id, card_id,
-                            name, glyph, profession, star, price, sold)
-    VALUES (?,?,?,?,?,?,?,?,?,?,0)
+    INSERT INTO shop_slots (save_id, slot_index, kind, template_id, card_id, equipment_code,
+                            name, glyph, profession, rarity, star, price, sold)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,0)
   `);
   slots.forEach((s, i) => {
     ins.run(
-      saveId, i, s.kind, s.templateId ?? null, s.cardId ?? null,
-      s.name ?? '', s.glyph ?? '', s.profession ?? '', s.star ?? 1, s.price ?? 0,
+      saveId, i, s.kind, s.templateId ?? null, s.cardId ?? null, s.equipmentCode ?? '',
+      s.name ?? '', s.glyph ?? '', s.profession ?? '', s.rarity ?? '', s.star ?? 1, s.price ?? 0,
     );
   });
 }
@@ -224,6 +250,7 @@ function mapSave(r) {
     version: r.version,
     gold: r.gold,
     chapter: r.chapter,
+    maxChapter: r.max_chapter,
     round: r.round,
     streakWin: r.streak_win,
     streakLose: r.streak_lose,
@@ -242,6 +269,7 @@ function mapSaveSummary(r) {
     version: r.version,
     gold: r.gold,
     chapter: r.chapter,
+    maxChapter: r.max_chapter,
     round: r.round,
     heroCount: r.hero_count,
     allyCount: r.ally_count,

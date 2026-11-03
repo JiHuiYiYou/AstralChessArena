@@ -12,10 +12,7 @@ import { escapeHtml } from './shop.js';
  */
 export function renderRoster(container, data, handlers = {}) {
   const heroes = (data.heroes ?? []).filter((h) => h.isAlly && h.exist);
-  if (heroes.length === 0) {
-    container.innerHTML = '<div class="empty-state">还没有棋子，去商店买一个吧</div>';
-    return;
-  }
+  const items = data.items ?? [];
 
   container.innerHTML = `
     <div class="panel">
@@ -24,9 +21,25 @@ export function renderRoster(container, data, handlers = {}) {
         <span class="panel-sub">${heroes.filter((h) => h.file !== null).length} / ${data.maxBoardPieces ?? 5} 上阵</span>
       </div>
       <div class="panel-body">
-        <div class="hero-grid">
-          ${heroes.map((h) => heroCard(h, data, handlers)).join('')}
-        </div>
+        ${heroes.length === 0
+    ? '<div class="empty-state">还没有棋子，去商店买一个吧</div>'
+    : `<div class="hero-grid">${heroes.map((h) => heroCard(h, data, handlers)).join('')}</div>`}
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:12px">
+      <div class="panel-head">
+        <span class="panel-title">装备背包</span>
+        <span class="panel-sub">${items.length} 件</span>
+      </div>
+      <div class="panel-body">
+        ${items.length === 0
+    ? '<div class="empty-state">背包是空的 —— 商店里会刷出装备</div>'
+    : `<div class="hero-tags">${items.map((it) => {
+      const eq = (data.equipments ?? []).find((e) => e.code === it.code);
+      return `<span class="tag" data-act="equip-item" data-item="${it.id}" style="cursor:pointer"
+                    title="${escapeHtml(effectText(eq ?? { effect: {} }))}">${escapeHtml(eq?.name ?? it.code)}</span>`;
+    }).join('')}</div>`}
       </div>
     </div>
   `;
@@ -94,6 +107,7 @@ function bindHeroActions(container, data, handlers) {
         case 'break': handlers.onBreakthrough?.(heroId); break;
         case 'sell': handlers.onSell?.(heroId); break;
         case 'equip': handlers.onEquip?.(heroId, el.dataset.eq); break;
+        case 'equip-item': handlers.onEquipItem?.(Number(el.dataset.item)); break;
         default: break;
       }
     });

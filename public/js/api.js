@@ -52,6 +52,8 @@ export const api = {
   breakthrough: (slot, heroId, stat) => request('POST', `/api/saves/${slot}/breakthrough`, { heroId, stat }),
   enchant: (slot, heroId, saveCardId) => request('POST', `/api/saves/${slot}/enchant`, { heroId, saveCardId }),
   equip: (slot, heroId, equipmentCode) => request('POST', `/api/saves/${slot}/equip`, { heroId, equipmentCode }),
+  bag: (slot) => request('GET', `/api/saves/${slot}/bag`),
+  equipItem: (slot, itemId, heroId) => request('POST', `/api/saves/${slot}/equip-item`, { itemId, heroId }),
 
   /* 商店 */
   shop: (slot) => request('GET', `/api/saves/${slot}/shop`),
@@ -62,6 +64,7 @@ export const api = {
 
   /* 战斗 */
   battle: (slot) => request('POST', `/api/saves/${slot}/battle`),
+  setChapter: (slot, chapter) => request('POST', `/api/saves/${slot}/chapter`, { chapter }),
   battles: (slot, limit = 30) => request('GET', `/api/saves/${slot}/battles${qs({ limit })}`),
   battleById: (id) => request('GET', `/api/battles/${id}`),
 };

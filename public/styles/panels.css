@@ -890,3 +890,32 @@
     transition-duration: .01ms !important;
   }
 }
+
+/* ============================================================
+   章节选择 —— 紧凑一行，不占纵向空间
+   ============================================================ */
+.chapter-select {
+  gap: 4px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  margin-bottom: 10px;
+  padding-bottom: 3px;
+  scrollbar-width: none;
+}
+
+.chapter-select::-webkit-scrollbar {
+  display: none;
+}
+
+.chapter-chip {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  letter-spacing: 0;
+  border-radius: 8px;
+}

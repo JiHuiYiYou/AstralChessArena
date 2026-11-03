@@ -129,10 +129,10 @@ test('最终伤害倍数的卡真的改到 finalDamageMult', () => {
 
 test('回合收入 = 基础 + 连胜 + 利息', () => {
   const inc = roundIncome({ gold: 100, streakWin: 3, streakLose: 0 });
-  assert.equal(inc.base, 5);
+  assert.equal(inc.base, 8);
   assert.equal(inc.streak, 5);
   assert.equal(inc.interest, 10, '利息封顶 10');
-  assert.equal(inc.total, 20);
+  assert.equal(inc.total, 23);
 });
 
 test('连败也有保底收入', () => {
