@@ -86,7 +86,9 @@ function heroCard(h, data, handlers) {
         <button class="btn btn-gold btn-sm" data-act="train" data-hero="${h.id}">训练</button>
         <button class="btn btn-blue btn-sm" data-act="ascend" data-hero="${h.id}">升阶</button>
         <button class="btn btn-blue btn-sm" data-act="break" data-hero="${h.id}">突破</button>
-        <button class="btn btn-danger btn-sm" data-act="sell" data-hero="${h.id}">出售</button>
+        ${onBoard
+    ? `<button class="btn btn-ghost btn-sm" data-act="deploy-off" data-hero="${h.id}">下场</button>`
+    : `<button class="btn btn-danger btn-sm" data-act="sell" data-hero="${h.id}">出售</button>`}
       </div>
       <div class="hero-tags" style="margin-top:6px">
         ${(data.equipments ?? []).map((e) => `
@@ -112,6 +114,7 @@ function bindHeroActions(container, data, handlers) {
         case 'sell': handlers.onSell?.(heroId); break;
         case 'equip': handlers.onEquip?.(heroId, el.dataset.eq); break;
         case 'equip-item': handlers.onEquipItem?.(Number(el.dataset.item)); break;
+        case 'deploy-off': handlers.onDeployOff?.(heroId); break;
         default: break;
       }
     });

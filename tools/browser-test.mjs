@@ -143,6 +143,27 @@ async function main() {
   await sleep(1200);
   check('点「训练」后没有报错', consoleErrorCount() === 0);
 
+  // 4b. 下场：上阵的棋子要能撤下来，否则既换不了人也卖不掉
+  const before = evalValue("String(document.querySelectorAll('#board-grid .piece').length)");
+  const hadDeployOff = await waitFor(
+    "(() => { const b = Array.from(document.querySelectorAll('#tab-body [data-act]')).find(x => x.getAttribute('data-act') === 'deploy-off'); if (!b) return false; b.click(); return true; })()",
+    8000,
+    '下场按钮',
+  );
+  check('上阵的棋子有「下场」按钮', hadDeployOff);
+  const after = await waitFor(
+    `document.querySelectorAll('#board-grid .piece').length < ${Number(before)}`,
+    8000,
+    '下场生效',
+  );
+  check('点「下场」后棋子从棋盘上撤下来', after, `before=${before}`);
+  // 放回去，免得影响后面的战斗
+  await waitFor(
+    "(() => { const p = document.querySelector('#board-grid .square[data-file=\"0\"][data-rank=\"3\"]'); if (!p) return false; p.click(); return true; })()",
+    4000,
+    '重新上场',
+  );
+
   // 5. 升阶：没有同种棋子对子时会提示「需要另一个同种棋子」而不是弹窗，两种都算有响应
   pw('eval', "(() => { const b = Array.from(document.getElementsByClassName('hero-card')).flatMap(h => Array.from(h.querySelectorAll('button'))).find(x => x.getAttribute('data-act') === 'ascend'); if (b) b.click(); return 'ok'; })()");
   const responded = await waitFor(

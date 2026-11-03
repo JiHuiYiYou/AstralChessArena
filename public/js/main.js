@@ -245,6 +245,7 @@ function renderTab() {
       onBreakthrough: onBreakthrough,
       onEquip: onEquip,
       onEquipItem: onEquipItem,
+      onDeployOff: onDeployOff,
       onSell: onSell,
     });
   } else if (state.tab === 'synergy') {
@@ -325,6 +326,14 @@ function onSquareClick(file, rank) {
   if (!state.selectedHeroId) return;
   const hero = state.heroes.find((h) => h.id === state.selectedHeroId);
   if (!hero) return;
+
+  // 棋盘已满且选中的是没上阵的棋子 —— 先给提示，别让服务端报错
+  const onBoard = state.heroes.filter((h) => h.file !== null && h.file !== undefined && h.isAlly);
+  const alreadyOnBoard = hero.file !== null && hero.file !== undefined;
+  if (!alreadyOnBoard && onBoard.length >= (state.meta?.maxBoardPieces ?? 5)) {
+    toast(`棋盘已满（最多 ${state.meta?.maxBoardPieces ?? 5} 个），先把一个撤下来`, 'error');
+    return;
+  }
 
   const placements = state.heroes
     .filter((h) => h.file !== null && h.file !== undefined && h.exist && h.isAlly)
