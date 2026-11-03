@@ -174,6 +174,37 @@ async function main() {
   const rows = evalValue("String(document.getElementsByClassName('reward-row').length)");
   check('结果面板有奖励明细', Number(rows) >= 4, `rows=${rows}`);
 
+  // 8b. 历史战报 + 回放
+  const histCount = await waitFor(
+    "document.getElementById('battle-history').querySelectorAll('[data-replay]').length > 0",
+    10000,
+    '历史战报',
+  );
+  check('战斗后出现历史战报', histCount, '没有可回放的记录');
+
+  const replayed = await waitFor(
+    "(() => { const b = document.querySelector('#battle-history [data-replay]'); if (!b) return false; b.click(); return true; })()",
+    10000,
+    '点击回放',
+  );
+  check('能点开回放', replayed);
+  await waitFor(
+    "document.getElementById('battle-title').textContent.includes('回放')",
+    10000,
+    '回放标题',
+  );
+  const replayTitle = evalValue("document.getElementById('battle-title').textContent ?? ''");
+  check('回放模式标题正确', replayTitle.includes('回放'), `title=${replayTitle}`);
+
+  // 回放默认 ×2 速，一整场仍要几十秒 —— 直接跳过动画
+  clickButton('跳过动画');
+  await waitFor("!!document.querySelector('.result-panel')", 15000, '回放结束');
+  await waitFor(
+    "!document.getElementById('btn-battle-back').classList.contains('hidden')",
+    8000,
+    '回到准备按钮',
+  );
+
   // 9. 回到准备
   check('点「回到准备」回到准备阶段', clickButton('回到准备'));
   await sleep(1200);

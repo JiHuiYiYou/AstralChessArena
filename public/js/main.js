@@ -564,13 +564,38 @@ async function onStartBattle() {
   }
 }
 
+/** 回放一场历史战斗（事件流直接从 battles 表读出来） */
+async function onReplay(battleId) {
+  try {
+    const rec = await api.battleById(battleId);
+    // 回放默认 ×2：一整场可能有两三个回合，按原速播太久
+    state.battleCtrl = { value: Math.max(state.battleCtrl.value, 2), skip: false };
+    $('btn-battle-speed').textContent = `×${state.battleCtrl.value}`;
+    showBattleStage({
+      events: rec.events,
+      result: rec.result,
+      rounds: rec.rounds,
+      allyPower: rec.allyPower,
+      enemyPower: rec.enemyPower,
+      chapter: rec.chapter,
+      rewards: { gold: 0 },
+      state: { chapter: rec.chapter },
+      isReplay: true,
+    });
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
 function showBattleStage(res) {
   state.view = 'battle';
   $('stage-prep').classList.add('hidden');
   $('stage-battle').classList.remove('hidden');
   $('btn-battle-again').classList.add('hidden');
   $('btn-battle-back').classList.add('hidden');
-  $('battle-title').textContent = `第 ${res.rounds ?? '?'} 回合 · 第 ${state.save.chapter} 章`;
+  $('battle-title').textContent = res.isReplay
+    ? `回放 · 第 ${res.rounds ?? '?'} 回合 · 第 ${res.chapter} 章`
+    : `第 ${res.rounds ?? '?'} 回合 · 第 ${state.save.chapter} 章`;
   $('battle-log').innerHTML = '';
   $('result-slot').innerHTML = '';
 
@@ -588,12 +613,44 @@ function showBattleStage(res) {
       $('btn-battle-again').classList.remove('hidden');
       $('btn-battle-back').classList.remove('hidden');
       const label = res.result === 'win' ? '胜利' : res.result === 'lose' ? '失败' : '平局';
-      appendLog(`—— 战斗${label} —— 获得 ${formatNum(res.rewards.gold)} 金币`, 'result');
+      appendLog(res.isReplay
+        ? `—— 回放结束：${label} ——`
+        : `—— 战斗${label} —— 获得 ${formatNum(res.rewards.gold)} 金币`, 'result');
       showResult(res);
       rewardPop($('battle-title'));
-      await reload();
+      await renderBattleHistory();
+      if (!res.isReplay) await reload();
     },
   });
+
+  renderBattleHistory();
+}
+
+/** 历史战报列表 */
+async function renderBattleHistory() {
+  const box = $('battle-history');
+  if (!box) return;
+  try {
+    const list = await api.battles(state.slot, 20);
+    $('history-count').textContent = list.length ? `${list.length} 场` : '';
+    if (list.length === 0) {
+      box.innerHTML = '<div class="empty-state">还没有战斗记录</div>';
+      return;
+    }
+    box.innerHTML = list.map((b) => `
+      <div class="roster-row">
+        <div style="flex:1;min-width:0">
+          <strong>第 ${b.chapter} 章 · ${b.result === 'win' ? '胜利' : b.result === 'lose' ? '失败' : '平局'}</strong>
+          <div class="muted" style="font-size:11px">${b.rounds} 回合 · 战力 ${formatNum(b.allyPower)} vs ${formatNum(b.enemyPower)}</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" data-replay="${b.id}">回放</button>
+      </div>`).join('');
+    box.querySelectorAll('[data-replay]').forEach((el) => {
+      el.addEventListener('click', () => onReplay(Number(el.dataset.replay)));
+    });
+  } catch {
+    box.innerHTML = '<div class="empty-state">读取失败</div>';
+  }
 }
 
 /** 战斗结果面板 */
@@ -605,13 +662,17 @@ function showResult(res) {
     ['战斗回合', `${res.rounds} 回合`, ''],
     ['我方战力', formatNum(res.allyPower), ''],
     ['敌方战力', formatNum(res.enemyPower), ''],
-    ['获得金币', `+${formatNum(res.rewards.gold)}`, 'reward-gain'],
   ];
-  if (win) {
-    rows.push(['章节进度', `第 ${res.chapter} 章`, 'reward-gain']);
-    rows.push(['连胜', `${res.state?.streakWin ?? 0} 连胜`, 'reward-gain']);
+  if (res.isReplay) {
+    rows.push(['来源', '历史战报回放', '']);
   } else {
-    rows.push(['章节进度', `仍为第 ${res.state?.chapter ?? res.chapter} 章`, 'reward-lose']);
+    rows.push(['获得金币', `+${formatNum(res.rewards.gold)}`, 'reward-gain']);
+    if (win) {
+      rows.push(['章节进度', `第 ${res.chapter} 章`, 'reward-gain']);
+      rows.push(['连胜', `${res.state?.streakWin ?? 0} 连胜`, 'reward-gain']);
+    } else {
+      rows.push(['章节进度', `仍为第 ${res.state?.chapter ?? res.chapter} 章`, 'reward-lose']);
+    }
   }
 
   slot.innerHTML = `

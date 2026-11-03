@@ -216,10 +216,13 @@ export function expectedDamage(attack, critRate, critMult) {
 }
 
 /**
- * 棋子的综合战力（用于排序与章节对比）。
+ * 棋子的综合战力（界面上的「战力」数字，以及战斗前的强弱预估）。
+ *
+ * **以输出为主、生存为辅** —— 之前血量权重太高，
+ * 一个 8000 血但打不动人的坦克会把数字撑到 1.1 万，
+ * 出现「我方战力 1.1 万 vs 敌方 2416，结果输了」这种自相矛盾的数字。
  */
 export function powerOf(piece) {
-  const dps = expectedDamage(piece.attack, piece.critRate, piece.critMult) * (piece.ultMult ?? 1);
-  const hpScore = piece.maxHp * (1 + (piece.defense ?? 0) * 2);
-  return Math.floor(dps * 1.0 + hpScore * 0.35 + (piece.speed ?? 0) * 60);
+  const dps = expectedDamage(piece.attack, piece.critRate, piece.critMult);
+  return Math.floor(dps * 25 + piece.maxHp / 25 + (piece.speed ?? 0) * 50);
 }
