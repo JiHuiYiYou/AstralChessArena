@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>星穹弈境 · 棋盘自走棋</title>
+  <link rel="stylesheet" href="/styles/base.css">
+  <link rel="stylesheet" href="/styles/board.css">
+  <link rel="stylesheet" href="/styles/panels.css">
+  <link rel="stylesheet" href="/styles/vfx.css">
+</head>
+<body>
+  <canvas id="particles-canvas"></canvas>
+
+  <div id="app">
+    <header class="top-bar">
+      <div class="brand">✦ 星穹弈境<small>棋盘自走棋</small></div>
+      <div class="res-bar" id="res-bar">
+        <span class="res" data-res="gold">💰<b>0</b></span>
+        <span class="res" data-res="chapter">⭐<b>1</b></span>
+        <span class="res" data-res="round">⟳<b>1</b></span>
+        <span class="res" data-res="streak">🔥<b>0</b></span>
+      </div>
+      <div class="top-actions">
+        <button class="btn btn-ghost btn-sm" id="btn-speed" title="战斗速度">×1</button>
+        <button class="btn btn-ghost btn-sm" id="btn-sound" title="音效">🔊</button>
+        <button class="btn btn-ghost btn-sm" id="btn-saves" title="存档管理">💾</button>
+      </div>
+    </header>
+
+    <main id="main">
+      <!-- ============ 准备阶段 ============ -->
+      <section id="stage-prep" class="stage">
+        <div class="main-layout">
+          <div class="board-panel">
+            <div class="board-frame">
+              <div class="board-title">星穹棋盘</div>
+              <div class="board" id="board">
+                <div class="board-grid" id="board-grid"></div>
+                <div class="board-overlay" id="board-overlay"></div>
+              </div>
+            </div>
+            <div class="prep-actions">
+              <button class="btn btn-gold" id="btn-battle">⚔ 开始战斗</button>
+              <button class="btn btn-blue" id="btn-round">⟳ 结束准备阶段</button>
+            </div>
+          </div>
+
+          <aside class="side-panel">
+            <div class="tabs" id="tabs">
+              <button class="tab active" data-tab="shop">商店</button>
+              <button class="tab" data-tab="roster">阵容</button>
+              <button class="tab" data-tab="synergy">羁绊</button>
+              <button class="tab" data-tab="codex">图鉴</button>
+            </div>
+            <div class="tab-body scroll-y" id="tab-body"></div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- ============ 战斗阶段 ============ -->
+      <section id="stage-battle" class="stage hidden">
+        <div class="main-layout">
+          <div class="board-panel">
+            <div class="board-frame">
+              <div class="board-title" id="battle-title">战斗进行中</div>
+              <div class="board" id="battle-board">
+                <div class="board-grid" id="battle-grid"></div>
+                <div class="board-overlay" id="battle-overlay"></div>
+              </div>
+            </div>
+            <div class="battle-controls">
+              <button class="btn btn-ghost btn-sm" id="btn-battle-speed">×1</button>
+              <button class="btn btn-ghost btn-sm" id="btn-battle-skip">跳过动画</button>
+              <button class="btn btn-blue btn-sm hidden" id="btn-battle-again">再来一场</button>
+              <button class="btn btn-gold btn-sm hidden" id="btn-battle-back">回到准备</button>
+            </div>
+          </div>
+          <aside class="side-panel">
+            <div class="panel">
+              <div class="panel-head"><span class="panel-title">战斗记录</span></div>
+              <div class="panel-body scroll-y" id="battle-log"></div>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast-host"></div>
+  <div id="modal" class="modal hidden">
+    <div class="modal-panel" id="modal-panel"></div>
+  </div>
+
+  <script type="module" src="/js/main.js"></script>
+</body>
+</html>

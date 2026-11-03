@@ -1,0 +1,660 @@
+/* board.css — 8×8 棋盘、格子状态、棋子、血条、坐标与覆盖层 */
+
+/* ============================================================
+   1. 棋盘外框
+   ============================================================ */
+.board-frame {
+  position: relative;
+  padding: 14px;
+  background: linear-gradient(180deg, rgba(30, 37, 71, .70), rgba(10, 14, 31, .85));
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-panel);
+  transition: border-color var(--dur) ease, box-shadow var(--dur) ease;
+}
+
+.board-frame::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, .55), transparent);
+}
+
+.board-frame:hover {
+  border-color: rgba(255, 215, 0, .34);
+  box-shadow: var(--shadow-panel), var(--shadow-glow);
+}
+
+.board-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: var(--accent-gold);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px rgba(255, 215, 0, .25);
+}
+
+.board-title::before {
+  content: "";
+  width: 3px;
+  height: 15px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--accent-gold), rgba(255, 215, 0, 0));
+}
+
+.board-side-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: var(--text-secondary);
+}
+
+.board-side-label::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.board-side-label[data-side="ally"] {
+  color: var(--accent-green);
+}
+
+.board-side-label[data-side="enemy"] {
+  color: var(--accent-red);
+}
+
+/* ============================================================
+   2. 棋盘容器与 8×8 网格
+   ============================================================ */
+.board {
+  position: relative;
+  width: 100%;
+  margin: 0 auto;
+  border-radius: 8px;
+}
+
+/* 敌我用上下两条色带区分 —— 不靠文字说明，让布局自己解释 */
+.board::before,
+.board::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  pointer-events: none;
+  z-index: 22;
+}
+
+.board::before {
+  top: -2px;
+  background: linear-gradient(90deg, transparent, var(--accent-red), transparent);
+  box-shadow: 0 0 12px rgba(255, 71, 87, .55);
+}
+
+.board::after {
+  bottom: -2px;
+  background: linear-gradient(90deg, transparent, var(--accent-green), transparent);
+  box-shadow: 0 0 12px rgba(46, 213, 115, .55);
+}
+
+/* 桌面端把棋盘框限制在视口高度内，保证整盘可见（窄屏时铺满） */
+@media (min-width: 769px) {
+  .board-frame {
+    width: 100%;
+    max-width: calc(100vh - 215px);
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+.board-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-auto-rows: 1fr;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #070a16;
+  box-shadow:
+    inset 0 0 46px rgba(0, 0, 0, .65),
+    0 0 0 1px rgba(255, 215, 0, .14),
+    0 0 30px rgba(0, 0, 0, .55);
+}
+
+/* ============================================================
+   3. 格子
+   ============================================================ */
+.square {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background .18s ease, box-shadow .18s ease, filter .18s ease;
+}
+
+.square.light {
+  background: linear-gradient(160deg, #262e58, #1c2348);
+}
+
+.square.dark {
+  background: linear-gradient(160deg, #141a38, #0c1128);
+}
+
+.square::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  pointer-events: none;
+  transition: background .18s ease, box-shadow .18s ease;
+  z-index: 0;
+}
+
+/* 走子提示：青色圆点 */
+.square.move-hint {
+  box-shadow: inset 0 0 0 1px rgba(0, 210, 211, .28);
+}
+
+.square.move-hint::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 26%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(0, 210, 211, .95), rgba(0, 210, 211, .35) 60%, transparent 75%);
+  box-shadow: 0 0 12px rgba(0, 210, 211, .55);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* 攻击提示：赤色角标 */
+.square.attack-hint {
+  box-shadow: inset 0 0 0 1px rgba(255, 71, 87, .30);
+}
+
+.square.attack-hint::after {
+  content: "";
+  position: absolute;
+  inset: 14%;
+  border: 2px solid var(--accent-red);
+  border-radius: 3px;
+  transform: rotate(45deg);
+  box-shadow: 0 0 12px rgba(255, 71, 87, .55), inset 0 0 10px rgba(255, 71, 87, .35);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* 部署区域染色 */
+.square.ally-zone {
+  box-shadow: inset 0 0 0 1px rgba(46, 213, 115, .22);
+}
+
+.square.ally-zone::before {
+  background: linear-gradient(160deg, rgba(46, 213, 115, .16), rgba(46, 213, 115, .04));
+}
+
+.square.enemy-zone {
+  box-shadow: inset 0 0 0 1px rgba(255, 71, 87, .22);
+}
+
+.square.enemy-zone::before {
+  background: linear-gradient(160deg, rgba(255, 71, 87, .16), rgba(255, 71, 87, .04));
+}
+
+/* 可部署格：绿色描边 + 斜纹 */
+.square.deploy-valid {
+  box-shadow: inset 0 0 0 2px rgba(46, 213, 115, .55), inset 0 0 18px rgba(46, 213, 115, .18);
+}
+
+.square.deploy-valid::before {
+  background:
+    repeating-linear-gradient(45deg, rgba(46, 213, 115, .14) 0 6px, transparent 6px 12px),
+    linear-gradient(160deg, rgba(46, 213, 115, .12), rgba(46, 213, 115, .03));
+}
+
+/* 不可部署格 */
+.square.invalid {
+  filter: saturate(.35) brightness(.72);
+  cursor: not-allowed;
+}
+
+.square.invalid::before {
+  background: linear-gradient(160deg, rgba(255, 71, 87, .20), rgba(255, 71, 87, .08));
+}
+
+/* 选中格：金色内环（放在最后，保证压过提示与区域染色） */
+.square.sel {
+  background: linear-gradient(160deg, rgba(255, 215, 0, .20), rgba(255, 215, 0, .05));
+  box-shadow:
+    inset 0 0 0 2px var(--accent-gold),
+    inset 0 0 22px rgba(255, 215, 0, .28),
+    0 0 16px rgba(255, 215, 0, .18);
+}
+
+/* 攻击目标格：赤红内环 */
+.square.target {
+  background: linear-gradient(160deg, rgba(255, 71, 87, .20), rgba(255, 71, 87, .05));
+  box-shadow:
+    inset 0 0 0 2px var(--accent-red),
+    inset 0 0 20px rgba(255, 71, 87, .26),
+    0 0 16px rgba(255, 71, 87, .20);
+}
+
+/* ============================================================
+   4. 棋子
+   棋子绝对定位叠在格子上，JS 直接改 transform 让其平滑滑到目标格
+   ============================================================ */
+.piece {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  transform: translate3d(0, 0, 0);
+  transition: transform .18s ease;
+  will-change: transform;
+  pointer-events: none;
+}
+
+.piece.moving {
+  z-index: 9;
+}
+
+/* 棋子主图 */
+.piece-glyph {
+  position: absolute;
+  left: 50%;
+  top: 43%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  font-family: var(--font-mono);
+  font-size: clamp(17px, 2.5vw, 28px);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0;
+  border: 1px solid rgba(255, 215, 0, .40);
+  background:
+    radial-gradient(circle at 34% 26%, rgba(255, 255, 255, .16), transparent 58%),
+    radial-gradient(circle, rgba(10, 14, 31, .96), rgba(5, 7, 16, .99));
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, .55),
+    inset 0 1px 0 rgba(255, 255, 255, .12),
+    0 0 12px rgba(255, 215, 0, .12);
+  transition: transform .18s ease, filter .2s ease, box-shadow .2s ease, opacity .2s ease;
+}
+
+/* 棋子名 */
+.piece-name {
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  bottom: 9px;
+  overflow: hidden;
+  padding: 0 3px;
+  border-radius: 3px;
+  background: rgba(4, 7, 16, .62);
+  color: var(--text-primary);
+  font-size: 10px;
+  line-height: 1.35;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, .95);
+  z-index: 3;
+}
+
+/* 星级 */
+.piece-star {
+  position: absolute;
+  top: 2px;
+  left: 3px;
+  color: var(--accent-gold);
+  font-size: 9px;
+  line-height: 1;
+  letter-spacing: -1px;
+  text-shadow: 0 0 6px rgba(255, 215, 0, .6);
+  z-index: 4;
+}
+
+/* 血条 */
+.piece-hpbar {
+  position: absolute;
+  left: 7%;
+  right: 7%;
+  bottom: 2px;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, .72);
+  border: 1px solid rgba(0, 0, 0, .8);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, .8);
+  z-index: 5;
+}
+
+.piece-hpfill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #8b0000, var(--accent-red), #ff6b81);
+  box-shadow: 0 0 6px rgba(255, 71, 87, .55);
+  transition: width .35s ease;
+}
+
+/* 大招就绪 / 冷却小圆点 */
+.piece-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff6c0, var(--accent-gold));
+  box-shadow: 0 0 8px rgba(255, 215, 0, .95);
+  z-index: 6;
+  animation: piece-badge-pulse 1.2s ease-in-out infinite both;
+}
+
+.piece-badge.cool {
+  background: radial-gradient(circle, #8d97bb, var(--text-muted));
+  box-shadow: none;
+  animation: none;
+}
+
+@keyframes piece-badge-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: .85;
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 1;
+  }
+}
+
+/* 阵营配色 */
+.piece.ally {
+  --piece-accent: var(--accent-green);
+  --piece-accent-soft: rgba(46, 213, 115, .55);
+  --piece-glyph-color: #9df3c4;
+}
+
+.piece.ally .piece-glyph {
+  border-color: var(--piece-accent-soft);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, .55),
+    inset 0 1px 0 rgba(255, 255, 255, .14),
+    0 0 14px rgba(46, 213, 115, .22);
+  color: var(--piece-glyph-color);
+}
+
+.piece.enemy {
+  --piece-accent: var(--accent-red);
+  --piece-accent-soft: rgba(255, 71, 87, .55);
+  --piece-glyph-color: #ff9aa2;
+}
+
+.piece.enemy .piece-glyph {
+  border-color: var(--piece-accent-soft);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, .55),
+    inset 0 1px 0 rgba(255, 255, 255, .14),
+    0 0 14px rgba(255, 71, 87, .22);
+  color: var(--piece-glyph-color);
+}
+
+.piece.ally .piece-hpfill {
+  background: linear-gradient(90deg, #1a5c2e, var(--accent-green), #7bed9f);
+  box-shadow: 0 0 6px rgba(46, 213, 115, .55);
+}
+
+.piece.enemy .piece-hpfill {
+  background: linear-gradient(90deg, #8b0000, var(--accent-red), #ff6b81);
+  box-shadow: 0 0 6px rgba(255, 71, 87, .55);
+}
+
+/* 王棋：金环 + 呼吸光 */
+.piece.king {
+  --piece-accent: var(--accent-gold);
+  --piece-accent-soft: var(--accent-gold);
+  --piece-glyph-color: #fff3b0;
+}
+
+.piece.king .piece-glyph {
+  border-color: var(--accent-gold);
+  color: #fff3b0;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, .55),
+    inset 0 1px 0 rgba(255, 255, 255, .2),
+    0 0 18px rgba(255, 215, 0, .38);
+  animation: piece-king-pulse 1.8s ease-in-out infinite both;
+}
+
+@keyframes piece-king-pulse {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.07);
+  }
+}
+
+/* 选中棋子：白色外环 + 金色描边（JS 用 .selected 标记） */
+.piece.selected .piece-glyph {
+  border-color: #fff;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, .55),
+    inset 0 1px 0 rgba(255, 255, 255, .22),
+    0 0 0 2px rgba(255, 215, 0, .70),
+    0 0 20px rgba(255, 215, 0, .45);
+}
+
+.piece.selected .piece-name {
+  color: var(--accent-gold);
+  background: rgba(40, 30, 4, .78);
+}
+
+/* 阵亡棋子 */
+.piece.dead {
+  opacity: .32;
+  filter: grayscale(1) brightness(.55);
+}
+
+.piece.dead .piece-glyph {
+  transform: translate(-50%, -50%) rotate(72deg) scale(.82);
+}
+
+.piece.dead .piece-name,
+.piece.dead .piece-hpbar,
+.piece.dead .piece-star,
+.piece.dead .piece-badge {
+  opacity: 0;
+}
+
+/* 兵种字形配色（数据属性驱动） */
+.piece-glyph[data-piece="pawn"] {
+  color: #c9d3e6;
+}
+
+.piece-glyph[data-piece="knight"] {
+  color: #e6d7ff;
+}
+
+.piece-glyph[data-piece="bishop"] {
+  color: #d5f7ff;
+}
+
+.piece-glyph[data-piece="rook"] {
+  color: #ffe9b0;
+}
+
+.piece-glyph[data-piece="queen"] {
+  color: #ffd9ec;
+}
+
+.piece-glyph[data-piece="king"] {
+  color: #fff3b0;
+}
+
+/* 职业配色（数据属性驱动） */
+.piece[data-prof="shadow"] .piece-glyph {
+  border-color: rgba(255, 71, 87, .65);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .55), 0 0 14px rgba(255, 71, 87, .28);
+}
+
+.piece[data-prof="arcane"] .piece-glyph {
+  border-color: rgba(184, 41, 221, .65);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .55), 0 0 14px rgba(184, 41, 221, .28);
+}
+
+.piece[data-prof="healer"] .piece-glyph {
+  border-color: rgba(46, 213, 115, .65);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .55), 0 0 14px rgba(46, 213, 115, .28);
+}
+
+.piece[data-prof="guard"] .piece-glyph {
+  border-color: rgba(45, 140, 240, .65);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .55), 0 0 14px rgba(45, 140, 240, .28);
+}
+
+/* 王棋始终保持金环（与职业配色同权重，靠后写覆盖） */
+.piece.king .piece-glyph {
+  border-color: var(--accent-gold);
+  color: #fff3b0;
+}
+
+/* ============================================================
+   5. 坐标
+   ============================================================ */
+.board-coords {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 12;
+}
+
+.coord {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1;
+  color: rgba(255, 215, 0, .58);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .95);
+}
+
+.coord.rank {
+  left: 3px;
+  transform: translateY(-50%);
+}
+
+.coord.file {
+  bottom: 3px;
+  transform: translateX(-50%);
+}
+
+.coord.center {
+  transform: translate(-50%, -50%);
+}
+
+/* ============================================================
+   6. 覆盖层（承载棋盘内特效与飘字）
+   ============================================================ */
+.board-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.board-overlay > * {
+  pointer-events: none;
+}
+
+/* ============================================================
+   7. 响应式
+   ============================================================ */
+@media (max-width: 1400px) {
+  .board-frame {
+    padding: 12px;
+  }
+
+  .piece-name {
+    font-size: 9px;
+  }
+
+  .piece-star {
+    font-size: 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .board-frame {
+    padding: 8px;
+  }
+
+  .board-title {
+    font-size: 13px;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .piece-name {
+    display: none;
+  }
+
+  .piece-hpbar {
+    left: 10%;
+    right: 10%;
+    height: 3px;
+  }
+}
+
+@media (max-width: 420px) {
+  .piece-glyph {
+    width: 68%;
+  }
+
+  .piece-star {
+    display: none;
+  }
+}
+
+/* ============================================================
+   8. 降低动态效果
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .piece,
+  .piece-glyph,
+  .piece-badge,
+  .piece-hpfill,
+  .square {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

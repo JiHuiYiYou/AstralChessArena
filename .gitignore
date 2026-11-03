@@ -1,8 +1,19 @@
-# 忽略 vscode 配置
-.vscode
-# 忽略 Claude Code 本地配置
-.claude
-# 忽略 node_modules 目录
-node_modules
-# 忽略 Claude Code 生成的 markdown 文件
-CLAUDE.md
+# 依赖（本项目零运行时依赖，留着以防将来加 devDependency）
+node_modules/
+
+# SQLite 数据库（运行时生成，不入库）
+data/
+*.db
+*.db-wal
+*.db-shm
+
+# playwright-cli 的快照/日志残留
+.playwright-cli/
+
+# 编辑器
+.vscode/
+.idea/
+
+# 系统
+.DS_Store
+Thumbs.db

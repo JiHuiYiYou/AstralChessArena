@@ -1,0 +1,19 @@
+{
+  "name": "astral-chess-arena",
+  "version": "1.0.0",
+  "private": true,
+  "description": "星穹弈境 · 棋盘自走棋 —— NodeJS + SQLite + 浏览器前端",
+  "type": "module",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "dev": "node --disable-warning=ExperimentalWarning src/dev.js",
+    "start": "node --disable-warning=ExperimentalWarning src/dev.js",
+    "test": "node --disable-warning=ExperimentalWarning --test \"test/*.test.js\"",
+    "doc": "node tools/build-doc.mjs",
+    "db:reset": "node --disable-warning=ExperimentalWarning tools/reset-db.mjs"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
